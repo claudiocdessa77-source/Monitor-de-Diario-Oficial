@@ -116,6 +116,33 @@
   .content-wrap{max-width:56rem;margin:0 auto;padding:2rem 1.5rem 4rem;}
   @media (min-width:640px){ .content-wrap{padding:2.75rem 2.5rem 4rem;} }
   .module-header{margin-bottom:1.75rem;}
+
+  .filter-input{
+    width:100%; font-size:12px; padding:4px 7px; border-radius:6px;
+    border:1px solid var(--paper-border); background:var(--paper-50); color:var(--ink-900);
+  }
+  .filter-input:focus{outline:2px solid var(--gold-500); outline-offset:0;}
+  .filter-input::placeholder{color:var(--ink-400);}
+  .truncate-cell{max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .note-dot{display:inline-block; width:6px; height:6px; border-radius:999px; background:var(--gold-500); margin-left:6px; vertical-align:middle;}
+  .obs-textarea{
+    width:100%; min-height:80px; border-radius:8px; padding:9px 11px; font-size:13px;
+    border:1px solid var(--paper-border); background:#fff; color:var(--ink-900); resize:vertical;
+  }
+  .obs-textarea:focus{outline:2px solid var(--gold-500); outline-offset:0;}
+  .print-header{display:none;}
+
+  @media print{
+    body *{visibility:hidden;}
+    #pessoas-section, #pessoas-section *{visibility:visible;}
+    #pessoas-section{position:absolute; top:0; left:0; width:100%; padding:0; border:none;}
+    .no-print{display:none !important;}
+    .print-header{display:block !important; margin-bottom:14px;}
+    .truncate-cell{max-width:none; white-space:normal;}
+    table{font-size:11px;}
+    th, td{padding:4px 6px !important;}
+    .selo-sec, .orgao-pill, .badge-revisar{border:1px solid #999 !important; background:none !important; box-shadow:none !important;}
+  }
 </style>
 </head>
 <body class="min-h-screen">
@@ -130,7 +157,7 @@
     </svg>
     <div class="hidden sm:block leading-tight">
       <p class="f-display text-base" style="color:#F3E7C9;">Monitor de<br>Aposentadorias</p>
-      <p class="text-xs mt-1" style="color:#7C93AF;">CPM / CEEPLT</p>
+      <p class="text-xs mt-1" style="color:#7C93AF;">CPM</p>
     </div>
   </div>
 
@@ -198,30 +225,40 @@
 
   <!-- AS PESSOAS: resultado único, sempre visível -->
   <section class="paper-card p-5 sm:p-6" id="pessoas-section">
-    <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+    <div class="flex items-center justify-between gap-3 mb-1 flex-wrap no-print">
       <h2 class="f-display text-lg" style="color:var(--navy-900);">Pessoas</h2>
       <span class="f-mono text-xs" style="color:var(--ink-400);" id="history-count-label">0 registros</span>
     </div>
+    <div class="print-header">
+      <p class="f-display text-lg" style="color:var(--navy-950);">Monitor de Aposentadorias — Pessoas</p>
+      <p class="text-xs" id="print-meta" style="color:#444;"></p>
+    </div>
 
     <div class="space-y-3">
-      <div class="flex flex-wrap items-center gap-2.5 justify-between">
-        <input id="history-search" type="text" placeholder="Buscar por nome…" class="rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[180px]" style="border:1px solid var(--paper-border);">
+      <div class="flex flex-wrap items-center gap-2.5 justify-end no-print">
+        <button id="btn-print-history" class="btn-ghost rounded-lg px-3.5 py-1.5 text-sm">Imprimir</button>
         <button id="btn-export-history" class="btn-ghost rounded-lg px-3.5 py-1.5 text-sm">Exportar (Excel)</button>
       </div>
       <div class="scroll-x">
         <table class="w-full text-sm border-collapse" id="history-table">
           <thead>
             <tr class="text-left text-xs" style="color:var(--ink-400); border-bottom:1px solid var(--paper-border);">
-              <th class="py-2 pr-3 font-medium">Servidor(a)</th>
-              <th class="py-2 pr-3 font-medium">Matrícula</th>
-              <th class="py-2 pr-3 font-medium">Processo</th>
-              <th class="py-2 pr-3 font-medium">Cargo</th>
               <th class="py-2 pr-3 font-medium">NTE</th>
               <th class="py-2 pr-3 font-medium">Unidade</th>
-              <th class="py-2 pr-3 font-medium">Valor</th>
-              <th class="py-2 pr-3 font-medium">Confiança</th>
+              <th class="py-2 pr-3 font-medium">Matrícula</th>
+              <th class="py-2 pr-3 font-medium">Nome</th>
+              <th class="py-2 pr-3 font-medium">Cargo</th>
               <th class="py-2 pr-3 font-medium">Registrado em</th>
-              <th class="py-2 pr-2 font-medium"></th>
+              <th class="py-2 pr-2 font-medium no-print"></th>
+            </tr>
+            <tr class="filter-row no-print">
+              <th class="pb-2 pr-3"><input data-filter="nte" type="text" placeholder="filtrar…" class="filter-input"></th>
+              <th class="pb-2 pr-3"><input data-filter="unidade" type="text" placeholder="filtrar…" class="filter-input"></th>
+              <th class="pb-2 pr-3"><input data-filter="matricula" type="text" placeholder="filtrar…" class="filter-input"></th>
+              <th class="pb-2 pr-3"><input data-filter="nome" type="text" placeholder="filtrar…" class="filter-input"></th>
+              <th class="pb-2 pr-3"><input data-filter="cargo" type="text" placeholder="filtrar…" class="filter-input"></th>
+              <th class="pb-2 pr-3"></th>
+              <th class="pb-2 pr-2"></th>
             </tr>
           </thead>
           <tbody id="history-tbody"></tbody>
@@ -332,7 +369,7 @@
 <!-- /view-config -->
 
 <footer class="text-center text-xs py-8" style="color:var(--ink-400);">
-  Uso interno · CPM/CEEPLT · dados extraídos de publicações do Diário Oficial do Estado da Bahia
+  Uso interno · CPM · dados extraídos de publicações do Diário Oficial do Estado da Bahia
 </footer>
 
 </div>
@@ -707,7 +744,10 @@
   const state = {
     config: { tipoKeyword:"aposentadoria", orgaoKeywords:"SEC" },
     todayT1: [], todayT2: [],
-    history: [], historySearch:"",
+    history: [],
+    historyFilters: { nte:"", unidade:"", matricula:"", nome:"", cargo:"" },
+    expandedKeys: new Set(),
+    historyRenderPending: false,
     nteBase: { map:{}, count:0, atualizadoEm:null }
   };
 
@@ -757,7 +797,21 @@
   function onHistoryChanged(newHistory){
     state.history = newHistory;
     renderStats();
+    const active = document.activeElement;
+    if(active && active.classList && active.classList.contains("obs-textarea")){
+      state.historyRenderPending = true;
+      return;
+    }
     renderHistoryTable();
+  }
+  async function saveObservacao(fbKey, texto){
+    const patch = { observacoes: texto };
+    if(fbDb && fbKey && !String(fbKey).startsWith("local_")){
+      try{ await fbDb.ref(FB_ROOT+"/historico/"+fbKey).update(patch); }catch(e){ console.error(e); }
+    } else {
+      const updated = state.history.map(r => (r._fbKey===fbKey) ? Object.assign({}, r, patch) : r);
+      await persistHistoryArrayFallback(updated);
+    }
   }
 
   async function addNewToHistory(items){
@@ -806,16 +860,42 @@
     list.innerHTML = state.todayT2.map((c,idx)=>reviewCardHtml(c, idx)).join("");
   }
 
+  const HISTORY_FILTER_FIELDS = [
+    { key:"nte", field:"nte" },
+    { key:"unidade", field:"unidade" },
+    { key:"matricula", field:"matricula" },
+    { key:"nome", field:"nome" },
+    { key:"cargo", field:"cargoDetalhe" }
+  ];
+  function applyHistoryFilters(rows){
+    let result = rows;
+    for(const {key,field} of HISTORY_FILTER_FIELDS){
+      const val = (state.historyFilters[key]||"").trim().toLowerCase();
+      if(val) result = result.filter(r => String(r[field]||"").toLowerCase().includes(val));
+    }
+    return result;
+  }
+  function updatePrintMeta(activeCount, totalCount){
+    const parts = HISTORY_FILTER_FIELDS
+      .filter(({key}) => (state.historyFilters[key]||"").trim())
+      .map(({key}) => key.charAt(0).toUpperCase()+key.slice(1) + '="' + state.historyFilters[key].trim() + '"');
+    const filtroTxt = parts.length ? "Filtros: " + parts.join(" · ") : "Sem filtros (lista geral)";
+    document.getElementById("print-meta").textContent =
+      "Impresso em " + fmtDateTimeBR(new Date().toISOString()) + " · " + activeCount + " de " + totalCount + " registro(s) · " + filtroTxt;
+  }
+
   function renderHistoryTable(){
+    state.historyRenderPending = false;
     const tbody = document.getElementById("history-tbody");
     const emptyMsg = document.getElementById("history-empty-msg");
-    const term = state.historySearch.trim().toLowerCase();
-    let rows = state.history.slice();
-    if(term) rows = rows.filter(r => (r.nome||"").toLowerCase().includes(term));
+    const rows = applyHistoryFilters(state.history.slice());
+    updatePrintMeta(rows.length, state.history.length);
+
     if(!rows.length){
       tbody.innerHTML = "";
       emptyMsg.classList.remove("hidden");
-      emptyMsg.textContent = term ? "Nenhum registro encontrado para essa busca." : "Nenhum registro ainda. Carregue uma edição em Configuração para começar.";
+      const anyFilter = HISTORY_FILTER_FIELDS.some(({key}) => (state.historyFilters[key]||"").trim());
+      emptyMsg.textContent = anyFilter ? "Nenhum registro encontrado para esses filtros." : "Nenhum registro ainda. Carregue uma edição em Configuração para começar.";
       return;
     }
     emptyMsg.classList.add("hidden");
@@ -836,30 +916,29 @@
     for(const dateKey of dateKeys){
       const groupRows = groups[dateKey].sort((a,b)=> (b.dataRegistro||"").localeCompare(a.dataRegistro||""));
       const label = dateKey === "__sem_data__" ? "Data não identificada" : dateKey;
-      html += '<tr class="date-group-row"><td colspan="10" class="pt-4 pb-1.5 px-1 text-xs font-semibold" style="color:var(--gold-600);">'+escapeHtml(label)+' <span class="font-normal" style="color:var(--ink-400);">— '+groupRows.length+(groupRows.length===1?' registro':' registros')+'</span></td></tr>';
+      html += '<tr class="date-group-row"><td colspan="7" class="pt-4 pb-1.5 px-1 text-xs font-semibold" style="color:var(--gold-600);">'+escapeHtml(label)+' <span class="font-normal" style="color:var(--ink-400);">— '+groupRows.length+(groupRows.length===1?' registro':' registros')+'</span></td></tr>';
       for(const it of groupRows){
         const key = it._fbKey || it.processo || ('mat:'+it.matricula);
-        const confBadge = it.confidence === 'baixa'
-          ? '<span class="badge-revisar">baixa</span>'
-          : '<span class="text-xs" style="color:var(--ink-400);">alta</span>';
+        const isOpen = state.expandedKeys.has(key);
+        const hasObs = it.observacoes && it.observacoes.trim();
         html += (
-          '<tr class="ledger-row ledger-row-sec fade-in" data-detail-target="hist-detail-'+idx+'">' +
-            '<td class="py-2.5 pr-3">'+escapeHtml(it.nome)+'</td>' +
-            '<td class="py-2.5 pr-3 f-mono">'+escapeHtml(it.matricula||"—")+'</td>' +
-            '<td class="py-2.5 pr-3 f-mono text-xs">'+escapeHtml(it.processo||"—")+'</td>' +
-            '<td class="py-2.5 pr-3">'+escapeHtml(it.cargoDetalhe||"—")+'</td>' +
+          '<tr class="ledger-row ledger-row-sec fade-in" data-detail-target="hist-detail-'+idx+'" data-key="'+escapeHtml(key)+'">' +
             '<td class="py-2.5 pr-3">'+escapeHtml(it.nte||"—")+'</td>' +
-            '<td class="py-2.5 pr-3">'+escapeHtml(it.unidade||"—")+'</td>' +
-            '<td class="py-2.5 pr-3 f-mono">'+(it.valor?('R$ '+escapeHtml(it.valor)):"—")+'</td>' +
-            '<td class="py-2.5 pr-3">'+confBadge+'</td>' +
+            '<td class="py-2.5 pr-3 truncate-cell" title="'+escapeHtml(it.unidade||"")+'">'+escapeHtml(it.unidade||"—")+'</td>' +
+            '<td class="py-2.5 pr-3 f-mono">'+escapeHtml(it.matricula||"—")+'</td>' +
+            '<td class="py-2.5 pr-3">'+escapeHtml(it.nome)+(hasObs?'<span class="note-dot" title="Tem observação"></span>':'')+'</td>' +
+            '<td class="py-2.5 pr-3 truncate-cell" title="'+escapeHtml(it.cargoDetalhe||"")+'">'+escapeHtml(it.cargoDetalhe||"—")+'</td>' +
             '<td class="py-2.5 pr-3 text-xs">'+fmtDateTimeBR(it.dataRegistro)+'</td>' +
-            '<td class="py-2.5 pr-2 text-right"><button class="btn-remove text-xs" data-key="'+escapeHtml(key)+'" style="color:var(--brick-600);" title="Remover do histórico">remover</button></td>' +
+            '<td class="py-2.5 pr-2 text-right no-print"><button class="btn-remove text-xs" data-key="'+escapeHtml(key)+'" style="color:var(--brick-600);" title="Remover do histórico">remover</button></td>' +
           '</tr>' +
-          '<tr class="detail-row hidden" id="hist-detail-'+idx+'">' +
-            '<td colspan="10" class="pb-3 px-3 text-xs" style="color:var(--ink-600);">' +
-              (it.tipoAto ? '<span class="font-semibold">'+escapeHtml(it.tipoAto)+'</span><br>' : '') +
-              (it.fundamento ? 'Fundamento: '+escapeHtml(it.fundamento)+'<br>' : '') +
-              (it.snippet ? 'Trecho: …'+escapeHtml(it.snippet)+'…' : '') +
+          '<tr class="detail-row'+(isOpen?'':' hidden')+' no-print" id="hist-detail-'+idx+'">' +
+            '<td colspan="7" class="pb-3.5 px-3 pt-1">' +
+              '<label class="text-xs font-semibold block mb-1" style="color:var(--navy-900);">Observações</label>' +
+              '<textarea class="obs-textarea" data-key="'+escapeHtml(key)+'" placeholder="Anotações sobre este registro…">'+escapeHtml(it.observacoes||"")+'</textarea>' +
+              '<div class="flex items-center gap-2.5 mt-2">' +
+                '<button class="btn-small btn-save-obs" data-key="'+escapeHtml(key)+'">Salvar observação</button>' +
+                '<span class="obs-saved-msg text-xs hidden" style="color:var(--ink-400);">Salvo ✓</span>' +
+              '</div>' +
             '</td>' +
           '</tr>'
         );
@@ -879,10 +958,10 @@
       "Tipo de Proventos": r.tipoProventos || "", "Valor (R$)": r.valor || "",
       "Valor por Extenso": r.valorExtenso || "", "Nº Portaria": r.portariaNumero || "",
       "Data da Portaria": r.portariaData || "", "Confiança": r.confidence || "",
-      "Registrado em": r.dataRegistro ? fmtDateTimeBR(r.dataRegistro) : ""
+      "Observações": r.observacoes || "", "Registrado em": r.dataRegistro ? fmtDateTimeBR(r.dataRegistro) : ""
     }));
     const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [{wch:28},{wch:12},{wch:26},{wch:8},{wch:10},{wch:24},{wch:30},{wch:26},{wch:38},{wch:14},{wch:13},{wch:36},{wch:12},{wch:20},{wch:10},{wch:16}];
+    ws["!cols"] = [{wch:28},{wch:12},{wch:26},{wch:8},{wch:10},{wch:24},{wch:30},{wch:26},{wch:38},{wch:14},{wch:13},{wch:36},{wch:12},{wch:20},{wch:10},{wch:34},{wch:16}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, sheetName || "Aposentadorias");
     XLSX.writeFile(wb, filename);
@@ -1066,8 +1145,16 @@
     });
     document.getElementById("stat-hist").addEventListener("click", scrollToPessoas);
 
-    document.getElementById("history-search").addEventListener("input", (e)=>{ state.historySearch = e.target.value; renderHistoryTable(); });
-    document.getElementById("btn-export-history").addEventListener("click", ()=>{ exportToExcel(state.history, "historico_aposentadorias.xlsx", "Histórico"); });
+    document.getElementById("history-table").addEventListener("input", (e)=>{
+      const key = e.target.getAttribute("data-filter");
+      if(!key) return;
+      state.historyFilters[key] = e.target.value;
+      renderHistoryTable();
+    });
+    document.getElementById("btn-export-history").addEventListener("click", ()=>{
+      exportToExcel(applyHistoryFilters(state.history.slice()), "historico_aposentadorias.xlsx", "Histórico");
+    });
+    document.getElementById("btn-print-history").addEventListener("click", ()=> window.print());
 
     document.body.addEventListener("click", async (e)=>{
       const confirmBtn = e.target.closest(".btn-confirm-review");
@@ -1092,11 +1179,36 @@
         if(confirm("Remover este registro do histórico?")) removeHistoryRecord(key);
         return;
       }
+      const saveObsBtn = e.target.closest(".btn-save-obs");
+      if(saveObsBtn){
+        const key = saveObsBtn.getAttribute("data-key");
+        const textarea = saveObsBtn.closest("td").querySelector(".obs-textarea");
+        await saveObservacao(key, textarea.value);
+        const msg = saveObsBtn.parentElement.querySelector(".obs-saved-msg");
+        msg.classList.remove("hidden");
+        setTimeout(()=> msg.classList.add("hidden"), 2000);
+        return;
+      }
       const row = e.target.closest(".ledger-row");
       if(row && row.dataset.detailTarget){
         const target = document.getElementById(row.dataset.detailTarget);
-        if(target) target.classList.toggle("hidden");
+        if(!target) return;
+        target.classList.toggle("hidden");
+        const key = row.dataset.key;
+        if(key){
+          if(target.classList.contains("hidden")) state.expandedKeys.delete(key);
+          else state.expandedKeys.add(key);
+        }
       }
+    });
+
+    // Salva a observação ao sair do campo (focusout borbulha, diferente de blur), e libera
+    // qualquer atualização de tabela que ficou pendente enquanto o campo estava em edição.
+    document.body.addEventListener("focusout", async (e)=>{
+      if(!e.target.classList || !e.target.classList.contains("obs-textarea")) return;
+      const key = e.target.getAttribute("data-key");
+      await saveObservacao(key, e.target.value);
+      if(state.historyRenderPending) renderHistoryTable();
     });
   }
 
