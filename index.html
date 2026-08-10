@@ -121,6 +121,9 @@
     width:100%; font-size:12px; padding:4px 7px; border-radius:6px;
     border:1px solid var(--paper-border); background:var(--paper-50); color:var(--ink-900);
   }
+  .sticky-head tr{position:sticky; z-index:5;}
+  .sticky-head tr:first-child{top:0;}
+  .sticky-head tr:last-child{top:32px;}
   .filter-input:focus{outline:2px solid var(--gold-500); outline-offset:0;}
   .filter-input::placeholder{color:var(--ink-400);}
   .truncate-cell{max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -166,6 +169,10 @@
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="2" width="9" height="11.5" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M5.4 5.4h4.2M5.4 7.9h4.2M5.4 10.4h2.6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
       <span class="nav-label">Produção</span>
     </button>
+    <button class="nav-item" data-view="arquivado">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2.5" width="12" height="3" rx="0.8" stroke="currentColor" stroke-width="1.3"/><path d="M2.9 5.5v6.7c0 .7.6 1.3 1.3 1.3h7.6c.7 0 1.3-.6 1.3-1.3V5.5" stroke="currentColor" stroke-width="1.3"/><path d="M6.3 8h3.4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+      <span class="nav-label">Arquivado</span>
+    </button>
     <button class="nav-item" data-view="config">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.2" stroke="currentColor" stroke-width="1.3"/><path d="M8 1.6v1.5M8 12.9v1.5M14.4 8h-1.5M3.1 8H1.6M12.4 3.6l-1.05 1.05M4.65 11.35 3.6 12.4M12.4 12.4l-1.05-1.05M4.65 4.65 3.6 3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
       <span class="nav-label">Configuração</span>
@@ -190,26 +197,26 @@
     </div>
   </div>
 
-  <div class="space-y-6">
+  <div class="space-y-3">
 
   <!-- DASHBOARD -->
   <p id="process-msg" class="text-sm hidden"></p>
   <section class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-    <button id="stat-total" class="stat-card p-4">
+    <button id="stat-total" class="stat-card p-3">
       <p class="text-xs" style="color:var(--ink-400);">Itens confirmados</p>
-      <p class="stat-num text-3xl mt-1" style="color:var(--navy-900);" id="stat-total-num">—</p>
+      <p class="stat-num text-2xl mt-0.5" style="color:var(--navy-900);" id="stat-total-num">—</p>
     </button>
-    <button id="stat-sec" class="stat-card p-4">
+    <button id="stat-sec" class="stat-card p-3">
       <p class="text-xs" style="color:var(--ink-400);">Confirmados no órgão</p>
-      <p class="stat-num text-3xl mt-1" style="color:var(--gold-600);" id="stat-sec-num">—</p>
+      <p class="stat-num text-2xl mt-0.5" style="color:var(--gold-600);" id="stat-sec-num">—</p>
     </button>
-    <button id="stat-review" class="stat-card p-4">
+    <button id="stat-review" class="stat-card p-3">
       <p class="text-xs" style="color:var(--ink-400);">Para revisar</p>
-      <p class="stat-num text-3xl mt-1" style="color:var(--amber-600);" id="stat-review-num">—</p>
+      <p class="stat-num text-2xl mt-0.5" style="color:var(--amber-600);" id="stat-review-num">—</p>
     </button>
-    <button id="stat-hist" class="stat-card p-4">
+    <button id="stat-hist" class="stat-card p-3">
       <p class="text-xs" style="color:var(--ink-400);">Total no histórico</p>
-      <p class="stat-num text-3xl mt-1" style="color:var(--navy-900);" id="stat-hist-num">0</p>
+      <p class="stat-num text-2xl mt-0.5" style="color:var(--navy-900);" id="stat-hist-num">0</p>
     </button>
   </section>
 
@@ -224,34 +231,36 @@
   </section>
 
   <!-- AS PESSOAS: resultado único, sempre visível -->
-  <section class="paper-card p-5 sm:p-6" id="pessoas-section">
-    <div class="flex items-center justify-between gap-3 mb-1 flex-wrap no-print">
-      <h2 class="f-display text-lg" style="color:var(--navy-900);">Pessoas</h2>
-      <span class="f-mono text-xs" style="color:var(--ink-400);" id="history-count-label">0 registros</span>
-    </div>
+  <section class="paper-card p-4 sm:p-5" id="pessoas-section">
     <div class="print-header">
-      <p class="f-display text-lg" style="color:var(--navy-950);">Monitor de Aposentadorias — Pessoas</p>
+      <p class="f-display text-lg" style="color:var(--navy-950);">Monitor de Aposentadorias — Pessoas (carga atual)</p>
       <p class="text-xs" id="print-meta" style="color:#444;"></p>
     </div>
 
-    <div class="space-y-3">
-      <div class="flex flex-wrap items-center gap-2.5 justify-end no-print">
+    <div class="flex flex-wrap items-center gap-2.5 justify-between mb-2 no-print">
+      <div class="flex items-center gap-2.5">
+        <h2 class="f-display text-lg" style="color:var(--navy-900);">Pessoas</h2>
+        <span class="f-mono text-xs" style="color:var(--ink-400);" id="history-count-label">0 registros</span>
+      </div>
+      <div class="flex items-center gap-2.5">
         <button id="btn-print-history" class="btn-ghost rounded-lg px-3.5 py-1.5 text-sm">Imprimir</button>
         <button id="btn-export-history" class="btn-ghost rounded-lg px-3.5 py-1.5 text-sm">Exportar (Excel)</button>
       </div>
+    </div>
+    <div>
       <div class="scroll-x">
         <table class="w-full text-sm border-collapse" id="history-table">
-          <thead>
-            <tr class="text-left text-xs" style="color:var(--ink-400); border-bottom:1px solid var(--paper-border);">
-              <th class="py-2 pr-3 font-medium">NTE</th>
-              <th class="py-2 pr-3 font-medium">Unidade</th>
-              <th class="py-2 pr-3 font-medium">Matrícula</th>
-              <th class="py-2 pr-3 font-medium">Nome</th>
-              <th class="py-2 pr-3 font-medium">Cargo</th>
-              <th class="py-2 pr-3 font-medium">Registrado em</th>
-              <th class="py-2 pr-2 font-medium no-print"></th>
+          <thead class="sticky-head">
+            <tr class="text-left text-xs" style="color:var(--navy-900); border-bottom:1px solid var(--paper-border); background:#fff;">
+              <th class="py-2 pr-3 font-bold">NTE</th>
+              <th class="py-2 pr-3 font-bold">Unidade</th>
+              <th class="py-2 pr-3 font-bold">Matrícula</th>
+              <th class="py-2 pr-3 font-bold">Nome</th>
+              <th class="py-2 pr-3 font-bold">Cargo</th>
+              <th class="py-2 pr-3 font-bold">Data do D.O.</th>
+              <th class="py-2 pr-2 font-bold no-print"></th>
             </tr>
-            <tr class="filter-row no-print">
+            <tr class="filter-row no-print" style="background:#fff;">
               <th class="pb-2 pr-3"><input data-filter="nte" type="text" placeholder="filtrar…" class="filter-input"></th>
               <th class="pb-2 pr-3"><input data-filter="unidade" type="text" placeholder="filtrar…" class="filter-input"></th>
               <th class="pb-2 pr-3"><input data-filter="matricula" type="text" placeholder="filtrar…" class="filter-input"></th>
@@ -273,6 +282,63 @@
 </div>
 <!-- /view-producao -->
 
+<div id="view-arquivado" class="module-view hidden">
+<div class="content-wrap">
+
+  <div class="module-header">
+    <h1 class="f-display text-2xl" style="color:var(--navy-900);">Arquivado</h1>
+    <p class="text-sm mt-0.5" style="color:var(--ink-600);">Cargas anteriores — nada aqui é apagado quando uma carga nova chega</p>
+  </div>
+
+  <section class="paper-card p-4 sm:p-5" id="arquivado-section">
+    <div class="print-header">
+      <p class="f-display text-lg" style="color:var(--navy-950);">Monitor de Aposentadorias — Arquivado</p>
+      <p class="text-xs" id="print-meta-arquivado" style="color:#444;"></p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2.5 justify-between mb-2 no-print">
+      <div class="flex items-center gap-2.5">
+        <h2 class="f-display text-lg" style="color:var(--navy-900);">Arquivado</h2>
+        <span class="f-mono text-xs" style="color:var(--ink-400);" id="archived-count-label">0 registros</span>
+      </div>
+      <div class="flex items-center gap-2.5">
+        <button id="btn-print-archived" class="btn-ghost rounded-lg px-3.5 py-1.5 text-sm">Imprimir</button>
+        <button id="btn-export-archived" class="btn-ghost rounded-lg px-3.5 py-1.5 text-sm">Exportar (Excel)</button>
+      </div>
+    </div>
+    <div>
+      <div class="scroll-x">
+        <table class="w-full text-sm border-collapse" id="archived-table">
+          <thead class="sticky-head">
+            <tr class="text-left text-xs" style="color:var(--navy-900); border-bottom:1px solid var(--paper-border); background:#fff;">
+              <th class="py-2 pr-3 font-bold">NTE</th>
+              <th class="py-2 pr-3 font-bold">Unidade</th>
+              <th class="py-2 pr-3 font-bold">Matrícula</th>
+              <th class="py-2 pr-3 font-bold">Nome</th>
+              <th class="py-2 pr-3 font-bold">Cargo</th>
+              <th class="py-2 pr-3 font-bold">Data do D.O.</th>
+              <th class="py-2 pr-2 font-bold no-print"></th>
+            </tr>
+            <tr class="filter-row no-print" style="background:#fff;">
+              <th class="pb-2 pr-3"><input data-filter="nte" type="text" placeholder="filtrar…" class="filter-input"></th>
+              <th class="pb-2 pr-3"><input data-filter="unidade" type="text" placeholder="filtrar…" class="filter-input"></th>
+              <th class="pb-2 pr-3"><input data-filter="matricula" type="text" placeholder="filtrar…" class="filter-input"></th>
+              <th class="pb-2 pr-3"><input data-filter="nome" type="text" placeholder="filtrar…" class="filter-input"></th>
+              <th class="pb-2 pr-3"><input data-filter="cargo" type="text" placeholder="filtrar…" class="filter-input"></th>
+              <th class="pb-2 pr-3"></th>
+              <th class="pb-2 pr-2"></th>
+            </tr>
+          </thead>
+          <tbody id="archived-tbody"></tbody>
+        </table>
+      </div>
+      <p id="archived-empty-msg" class="text-sm py-6 text-center hidden" style="color:var(--ink-400);">Nada arquivado ainda.</p>
+    </div>
+  </section>
+
+</div>
+</div>
+<!-- /view-arquivado -->
 
 <div id="view-config" class="module-view hidden">
 <div class="content-wrap">
@@ -406,6 +472,15 @@
     const month = MESES_PT[monthKey];
     if(month === undefined) return null;
     return new Date(parseInt(m[3],10), month, parseInt(m[1],10));
+  }
+  // Data do D.O.: extraída do próprio cabeçalho/capa da edição (ex.: "SALVADOR, SEXTA-FEIRA, 7 DE
+  // AGOSTO DE 2026"), não da data de cada Portaria individual — é UMA data por PDF carregado.
+  function extractMastheadDate(fullText){
+    const head = String(fullText||"").slice(0, 3000);
+    const m = head.match(/(\d{1,2})\s+DE\s+([A-ZÇÃÕÁÉÍÓÚ]+)\s+DE\s+(\d{4})/i);
+    if(!m) return null;
+    const mes = m[2].charAt(0).toUpperCase() + m[2].slice(1).toLowerCase();
+    return m[1] + ' de ' + mes + ' de ' + m[3];
   }
 
   // ---------- TIER 1: structured extraction ----------
@@ -643,47 +718,94 @@
     if(!val) return [];
     return Object.keys(val).map(key => Object.assign({ _fbKey:key }, val[key]));
   }
-  async function loadHistoryOnce(){
+
+  // Migração única: registros antigos ficavam soltos em /historico/{key}. Copia tudo para
+  // /historico/atual/{mesma chave} e só então remove do local antigo — feito num único
+  // update() multi-caminho (atômico do ponto de vista da requisição), nada fica órfão.
+  async function migrateFlatHistoryIfNeeded(){
+    if(!fbDb) return;
+    try{
+      const snap = await fbDb.ref(FB_ROOT+"/historico").once("value");
+      const val = snap.val();
+      if(!val) return;
+      const flatKeys = Object.keys(val).filter(k => k!=="atual" && k!=="arquivado" && val[k] && typeof val[k]==="object" && ("nome" in val[k]));
+      if(!flatKeys.length) return;
+      const updates = {};
+      flatKeys.forEach(k => {
+        updates[FB_ROOT+"/historico/atual/"+k] = val[k];
+        updates[FB_ROOT+"/historico/"+k] = null;
+      });
+      await fbDb.ref().update(updates);
+    }catch(e){ console.error("Falha na migração de histórico:", e); }
+  }
+
+  async function loadBucketOnce(bucket){
     if(fbDb){
-      try{ const snap = await fbDb.ref(FB_ROOT+"/historico").once("value"); return historySnapshotToArray(snap.val()); }
+      try{ const snap = await fbDb.ref(FB_ROOT+"/historico/"+bucket).once("value"); return historySnapshotToArray(snap.val()); }
       catch(e){ console.error(e); return []; }
     }
     if(windowStorageAvailable){
-      try{ const res = await window.storage.get(STORAGE_KEY); if(res && res.value){ return JSON.parse(res.value).history || []; } }
+      try{ const res = await window.storage.get(STORAGE_KEY); if(res && res.value){ return JSON.parse(res.value)[bucket] || []; } }
       catch(e){}
     }
-    return (memoryFallback && memoryFallback.history) || [];
+    return (memoryFallback && memoryFallback[bucket]) || [];
   }
-  function subscribeHistory(onChange){
-    if(fbDb){ fbDb.ref(FB_ROOT+"/historico").on("value", (snap)=> onChange(historySnapshotToArray(snap.val()))); return; }
-    // Sem Firebase configurado: não há push em tempo real entre dispositivos — carrega uma vez.
-    loadHistoryOnce().then(onChange);
+  function subscribeBucket(bucket, onChange){
+    if(fbDb){ fbDb.ref(FB_ROOT+"/historico/"+bucket).on("value", (snap)=> onChange(historySnapshotToArray(snap.val()))); return; }
+    loadBucketOnce(bucket).then(onChange);
   }
-  async function persistHistoryArrayFallback(arr){
+  async function persistBucketFallback(bucket, arr){
     if(windowStorageAvailable){
       try{
         const res = await window.storage.get(STORAGE_KEY).catch(()=>null);
         const existing = (res && res.value) ? JSON.parse(res.value) : { config: state.config };
-        existing.history = arr;
+        existing[bucket] = arr;
         await window.storage.set(STORAGE_KEY, JSON.stringify(existing));
       }catch(e){}
     } else {
       memoryFallback = memoryFallback || {};
-      memoryFallback.history = arr;
+      memoryFallback[bucket] = arr;
     }
-    onHistoryChanged(arr);
+    if(bucket==="atual") onHistoryChanged(arr); else onArchivedChanged(arr);
   }
-  async function pushHistoryRecord(record){
-    if(fbDb){ const ref = await fbDb.ref(FB_ROOT+"/historico").push(record); return ref.key; }
-    const current = await loadHistoryOnce();
+  async function pushToBucket(bucket, record){
+    if(fbDb){ const ref = await fbDb.ref(FB_ROOT+"/historico/"+bucket).push(record); return ref.key; }
+    const current = await loadBucketOnce(bucket);
     const withKey = Object.assign({ _fbKey: 'local_'+Date.now()+'_'+Math.random().toString(36).slice(2) }, record);
-    await persistHistoryArrayFallback(current.concat([withKey]));
+    await persistBucketFallback(bucket, current.concat([withKey]));
     return withKey._fbKey;
   }
-  async function removeHistoryRecordByKey(fbKey){
-    if(fbDb){ await fbDb.ref(FB_ROOT+"/historico/"+fbKey).remove(); return; }
-    const current = await loadHistoryOnce();
-    await persistHistoryArrayFallback(current.filter(r => r._fbKey !== fbKey));
+  async function removeFromBucket(bucket, fbKey){
+    if(fbDb){ await fbDb.ref(FB_ROOT+"/historico/"+bucket+"/"+fbKey).remove(); return; }
+    const current = await loadBucketOnce(bucket);
+    await persistBucketFallback(bucket, current.filter(r => r._fbKey !== fbKey));
+  }
+  async function updateInBucket(bucket, fbKey, patch){
+    if(fbDb && fbKey && !String(fbKey).startsWith("local_")){
+      try{ await fbDb.ref(FB_ROOT+"/historico/"+bucket+"/"+fbKey).update(patch); }catch(e){ console.error(e); }
+      return;
+    }
+    const current = await loadBucketOnce(bucket);
+    await persistBucketFallback(bucket, current.map(r => r._fbKey===fbKey ? Object.assign({}, r, patch) : r));
+  }
+  // Move tudo de "atual" para "arquivado" de uma vez, preservando a mesma chave — chamado logo
+  // antes de gravar uma carga genuinamente nova. Nunca apaga: só muda de pasta.
+  async function archiveCurrentBatch(){
+    const current = await loadBucketOnce("atual");
+    if(!current.length) return;
+    if(fbDb){
+      const updates = {};
+      current.forEach(r => {
+        const rest = Object.assign({}, r); delete rest._fbKey;
+        updates[FB_ROOT+"/historico/arquivado/"+r._fbKey] = rest;
+        updates[FB_ROOT+"/historico/atual/"+r._fbKey] = null;
+      });
+      try{ await fbDb.ref().update(updates); }catch(e){ console.error("Falha ao arquivar lote:", e); }
+    } else {
+      const arquivado = await loadBucketOnce("arquivado");
+      await persistBucketFallback("arquivado", arquivado.concat(current));
+      await persistBucketFallback("atual", []);
+    }
   }
 
   // ---------- base de matrículas x NTE (carregada por planilha, usada para enriquecer os registros) ----------
@@ -744,12 +866,17 @@
   const state = {
     config: { tipoKeyword:"aposentadoria", orgaoKeywords:"SEC" },
     todayT1: [], todayT2: [],
-    history: [],
+    currentDoDate: null,
+    archivedThisSession: false,
+    history: [], archived: [],
     historyFilters: { nte:"", unidade:"", matricula:"", nome:"", cargo:"" },
+    archivedFilters: { nte:"", unidade:"", matricula:"", nome:"", cargo:"" },
     expandedKeys: new Set(),
     historyRenderPending: false,
+    archivedRenderPending: false,
     nteBase: { map:{}, count:0, atualizadoEm:null }
   };
+  function recordDedupKey(r){ return r.processo || ('mat:'+r.matricula); }
 
   function lookupReferencia(matricula){
     if(!matricula) return null;
@@ -764,67 +891,68 @@
       });
     });
   }
-  // Preenche NTE/Unidade de registros do histórico que ficaram sem, porque a base foi carregada
-  // depois (ou atualizada). Só toca nos campos que estão vazios — nunca sobrescreve um valor já
-  // preenchido, e nenhum outro campo do registro é alterado.
+  // Preenche NTE/Unidade de registros (atual + arquivado) que ficaram sem, porque a base foi
+  // carregada depois. Só toca nos campos vazios — nunca sobrescreve um valor já preenchido.
   async function backfillNteInHistory(){
-    const pendentes = state.history.filter(r => (!r.nte || !r.unidade) && lookupReferencia(r.matricula));
-    if(!pendentes.length) return 0;
-    for(const r of pendentes){
-      const ref = lookupReferencia(r.matricula);
-      const patch = {};
-      if(!r.nte && ref.nte) patch.nte = ref.nte;
-      if(!r.unidade && ref.unidade) patch.unidade = ref.unidade;
-      if(!Object.keys(patch).length) continue;
-      if(fbDb && r._fbKey && !String(r._fbKey).startsWith('local_')){
-        try{ await fbDb.ref(FB_ROOT+"/historico/"+r._fbKey).update(patch); }catch(e){ console.error(e); }
-      }
-    }
-    if(!fbDb){
-      const updated = state.history.map(r => {
+    let total = 0;
+    for(const bucket of ["atual","arquivado"]){
+      const rows = bucket==="atual" ? state.history : state.archived;
+      const pendentes = rows.filter(r => (!r.nte || !r.unidade) && lookupReferencia(r.matricula));
+      if(!pendentes.length) continue;
+      total += pendentes.length;
+      for(const r of pendentes){
         const ref = lookupReferencia(r.matricula);
-        if(!ref) return r;
         const patch = {};
         if(!r.nte && ref.nte) patch.nte = ref.nte;
         if(!r.unidade && ref.unidade) patch.unidade = ref.unidade;
-        return Object.keys(patch).length ? Object.assign({}, r, patch) : r;
-      });
-      await persistHistoryArrayFallback(updated);
+        if(Object.keys(patch).length) await updateInBucket(bucket, r._fbKey, patch);
+      }
     }
-    return pendentes.length;
+    return total;
   }
 
   function onHistoryChanged(newHistory){
     state.history = newHistory;
     renderStats();
-    const active = document.activeElement;
-    if(active && active.classList && active.classList.contains("obs-textarea")){
-      state.historyRenderPending = true;
-      return;
-    }
+    if(isEditingObs()){ state.historyRenderPending = true; return; }
     renderHistoryTable();
   }
-  async function saveObservacao(fbKey, texto){
-    const patch = { observacoes: texto };
-    if(fbDb && fbKey && !String(fbKey).startsWith("local_")){
-      try{ await fbDb.ref(FB_ROOT+"/historico/"+fbKey).update(patch); }catch(e){ console.error(e); }
-    } else {
-      const updated = state.history.map(r => (r._fbKey===fbKey) ? Object.assign({}, r, patch) : r);
-      await persistHistoryArrayFallback(updated);
-    }
+  function onArchivedChanged(newArchived){
+    state.archived = newArchived;
+    renderStats();
+    if(isEditingObs()){ state.archivedRenderPending = true; return; }
+    renderArchivedTable();
+  }
+  function isEditingObs(){
+    const a = document.activeElement;
+    return !!(a && a.classList && a.classList.contains("obs-textarea"));
+  }
+  async function saveObservacao(bucket, fbKey, texto){
+    await updateInBucket(bucket, fbKey, { observacoes: texto });
   }
 
+  // Uma "carga" só arquiva o lote anterior UMA vez, mesmo que produza várias gravações
+  // (ex.: itens automáticos do Tier 1 + confirmações manuais do Tier 2 da mesma sessão).
   async function addNewToHistory(items){
-    const existingKeys = new Set(state.history.map(r => r.processo || ('mat:'+r.matricula)));
-    const toAdd = items.filter(r => !existingKeys.has(r.processo || ('mat:'+r.matricula)));
-    for(const item of toAdd){
-      const stamped = Object.assign({}, item, { dataRegistro: new Date().toISOString() });
-      await pushHistoryRecord(stamped);
+    const existingKeys = new Set([
+      ...state.history.map(recordDedupKey),
+      ...state.archived.map(recordDedupKey)
+    ]);
+    const toAdd = items.filter(r => !existingKeys.has(recordDedupKey(r)));
+    if(toAdd.length){
+      if(!state.archivedThisSession){
+        await archiveCurrentBatch();
+        state.archivedThisSession = true;
+      }
+      for(const item of toAdd){
+        const stamped = Object.assign({}, item, { dataRegistro: new Date().toISOString() });
+        await pushToBucket("atual", stamped);
+      }
     }
     return { added: toAdd.length, skipped: items.length - toAdd.length };
   }
-  async function removeHistoryRecord(fbKey){
-    await removeHistoryRecordByKey(fbKey);
+  async function removeHistoryRecord(bucket, fbKey){
+    await removeFromBucket(bucket, fbKey);
   }
 
   // ---------- rendering ----------
@@ -832,8 +960,10 @@
     document.getElementById("stat-total-num").textContent = state.todayT1.length ? state.todayT1.length : "—";
     document.getElementById("stat-sec-num").textContent = state.todayT1.length ? state.todayT1.filter(i=>i.isMatch).length : "—";
     document.getElementById("stat-review-num").textContent = (state.todayT1.length || state.todayT2.length) ? state.todayT2.length : "—";
-    document.getElementById("stat-hist-num").textContent = state.history.length;
+    document.getElementById("stat-hist-num").textContent = state.history.length + state.archived.length;
     document.getElementById("history-count-label").textContent = state.history.length + (state.history.length===1?" registro":" registros");
+    const archLabel = document.getElementById("archived-count-label");
+    if(archLabel) archLabel.textContent = state.archived.length + (state.archived.length===1?" registro":" registros");
   }
   function pulse(el){ el.classList.remove("pulse-once"); void el.offsetWidth; el.classList.add("pulse-once"); }
 
@@ -867,85 +997,103 @@
     { key:"nome", field:"nome" },
     { key:"cargo", field:"cargoDetalhe" }
   ];
-  function applyHistoryFilters(rows){
+  function applyHistoryFilters(rows, filters){
     let result = rows;
     for(const {key,field} of HISTORY_FILTER_FIELDS){
-      const val = (state.historyFilters[key]||"").trim().toLowerCase();
+      const val = (filters[key]||"").trim().toLowerCase();
       if(val) result = result.filter(r => String(r[field]||"").toLowerCase().includes(val));
     }
     return result;
   }
-  function updatePrintMeta(activeCount, totalCount){
+  function updatePrintMeta(metaElId, filters, activeCount, totalCount){
     const parts = HISTORY_FILTER_FIELDS
-      .filter(({key}) => (state.historyFilters[key]||"").trim())
-      .map(({key}) => key.charAt(0).toUpperCase()+key.slice(1) + '="' + state.historyFilters[key].trim() + '"');
+      .filter(({key}) => (filters[key]||"").trim())
+      .map(({key}) => key.charAt(0).toUpperCase()+key.slice(1) + '="' + filters[key].trim() + '"');
     const filtroTxt = parts.length ? "Filtros: " + parts.join(" · ") : "Sem filtros (lista geral)";
-    document.getElementById("print-meta").textContent =
+    document.getElementById(metaElId).textContent =
       "Impresso em " + fmtDateTimeBR(new Date().toISOString()) + " · " + activeCount + " de " + totalCount + " registro(s) · " + filtroTxt;
   }
 
-  function renderHistoryTable(){
-    state.historyRenderPending = false;
-    const tbody = document.getElementById("history-tbody");
-    const emptyMsg = document.getElementById("history-empty-msg");
-    const rows = applyHistoryFilters(state.history.slice());
-    updatePrintMeta(rows.length, state.history.length);
+  function personRowHtml(it, idx, prefix, bucket){
+    const key = it._fbKey || recordDedupKey(it);
+    const isOpen = state.expandedKeys.has(key);
+    const hasObs = it.observacoes && it.observacoes.trim();
+    return (
+      '<tr class="ledger-row ledger-row-sec fade-in" data-detail-target="'+prefix+'-detail-'+idx+'" data-key="'+escapeHtml(key)+'" data-bucket="'+bucket+'">' +
+        '<td class="py-2.5 pr-3">'+escapeHtml(it.nte||"—")+'</td>' +
+        '<td class="py-2.5 pr-3 truncate-cell" title="'+escapeHtml(it.unidade||"")+'">'+escapeHtml(it.unidade||"—")+'</td>' +
+        '<td class="py-2.5 pr-3 f-mono">'+escapeHtml(it.matricula||"—")+'</td>' +
+        '<td class="py-2.5 pr-3">'+escapeHtml(it.nome)+(hasObs?'<span class="note-dot" title="Tem observação"></span>':'')+'</td>' +
+        '<td class="py-2.5 pr-3 truncate-cell" title="'+escapeHtml(it.cargoDetalhe||"")+'">'+escapeHtml(it.cargoDetalhe||"—")+'</td>' +
+        '<td class="py-2.5 pr-3 text-xs">'+escapeHtml(it.dataDO||it.portariaData||"—")+'</td>' +
+        '<td class="py-2.5 pr-2 text-right no-print"><button class="btn-remove text-xs" data-key="'+escapeHtml(key)+'" data-bucket="'+bucket+'" style="color:var(--brick-600);" title="Remover">remover</button></td>' +
+      '</tr>' +
+      '<tr class="detail-row'+(isOpen?'':' hidden')+' no-print" id="'+prefix+'-detail-'+idx+'">' +
+        '<td colspan="7" class="pb-3.5 px-3 pt-1">' +
+          '<label class="text-xs font-semibold block mb-1" style="color:var(--navy-900);">Observações</label>' +
+          '<textarea class="obs-textarea" data-key="'+escapeHtml(key)+'" data-bucket="'+bucket+'" placeholder="Anotações sobre este registro…">'+escapeHtml(it.observacoes||"")+'</textarea>' +
+          '<div class="flex items-center gap-2.5 mt-2">' +
+            '<button class="btn-small btn-save-obs" data-key="'+escapeHtml(key)+'" data-bucket="'+bucket+'">Salvar observação</button>' +
+            '<span class="obs-saved-msg text-xs hidden" style="color:var(--ink-400);">Salvo ✓</span>' +
+          '</div>' +
+        '</td>' +
+      '</tr>'
+    );
+  }
+
+  // Renderizador compartilhado: Pessoas mostra o lote atual como lista simples; Arquivado
+  // mostra tudo agrupado por Data do D.O. (edições mais recentes primeiro).
+  function renderPeopleTable(opts){
+    const { sourceRows, filters, tbodyId, emptyMsgId, metaElId, prefix, bucket, groupByDate } = opts;
+    const tbody = document.getElementById(tbodyId);
+    const emptyMsg = document.getElementById(emptyMsgId);
+    const rows = applyHistoryFilters(sourceRows.slice(), filters);
+    updatePrintMeta(metaElId, filters, rows.length, sourceRows.length);
 
     if(!rows.length){
       tbody.innerHTML = "";
       emptyMsg.classList.remove("hidden");
-      const anyFilter = HISTORY_FILTER_FIELDS.some(({key}) => (state.historyFilters[key]||"").trim());
-      emptyMsg.textContent = anyFilter ? "Nenhum registro encontrado para esses filtros." : "Nenhum registro ainda. Carregue uma edição em Configuração para começar.";
+      const anyFilter = HISTORY_FILTER_FIELDS.some(({key}) => (filters[key]||"").trim());
+      emptyMsg.textContent = anyFilter ? "Nenhum registro encontrado para esses filtros."
+        : (bucket==="atual" ? "Nenhum registro ainda. Carregue uma edição em Configuração para começar." : "Nada arquivado ainda.");
       return;
     }
     emptyMsg.classList.add("hidden");
 
-    // Arquivar por data de Diário: agrupa por portariaData, ordenado da edição mais recente
-    // para a mais antiga. Registros sem data identificada ficam num grupo à parte, no fim.
-    const groups = {};
-    for(const r of rows){
-      const key = r.portariaData || "__sem_data__";
-      (groups[key] = groups[key] || []).push(r);
-    }
-    const dateKeys = Object.keys(groups).filter(k => k !== "__sem_data__")
-      .sort((a,b) => (parsePortariaDate(b)||0) - (parsePortariaDate(a)||0));
-    if(groups["__sem_data__"]) dateKeys.push("__sem_data__");
-
     let idx = 0;
     let html = "";
-    for(const dateKey of dateKeys){
-      const groupRows = groups[dateKey].sort((a,b)=> (b.dataRegistro||"").localeCompare(a.dataRegistro||""));
-      const label = dateKey === "__sem_data__" ? "Data não identificada" : dateKey;
-      html += '<tr class="date-group-row"><td colspan="7" class="pt-4 pb-1.5 px-1 text-xs font-semibold" style="color:var(--gold-600);">'+escapeHtml(label)+' <span class="font-normal" style="color:var(--ink-400);">— '+groupRows.length+(groupRows.length===1?' registro':' registros')+'</span></td></tr>';
-      for(const it of groupRows){
-        const key = it._fbKey || it.processo || ('mat:'+it.matricula);
-        const isOpen = state.expandedKeys.has(key);
-        const hasObs = it.observacoes && it.observacoes.trim();
-        html += (
-          '<tr class="ledger-row ledger-row-sec fade-in" data-detail-target="hist-detail-'+idx+'" data-key="'+escapeHtml(key)+'">' +
-            '<td class="py-2.5 pr-3">'+escapeHtml(it.nte||"—")+'</td>' +
-            '<td class="py-2.5 pr-3 truncate-cell" title="'+escapeHtml(it.unidade||"")+'">'+escapeHtml(it.unidade||"—")+'</td>' +
-            '<td class="py-2.5 pr-3 f-mono">'+escapeHtml(it.matricula||"—")+'</td>' +
-            '<td class="py-2.5 pr-3">'+escapeHtml(it.nome)+(hasObs?'<span class="note-dot" title="Tem observação"></span>':'')+'</td>' +
-            '<td class="py-2.5 pr-3 truncate-cell" title="'+escapeHtml(it.cargoDetalhe||"")+'">'+escapeHtml(it.cargoDetalhe||"—")+'</td>' +
-            '<td class="py-2.5 pr-3 text-xs">'+fmtDateTimeBR(it.dataRegistro)+'</td>' +
-            '<td class="py-2.5 pr-2 text-right no-print"><button class="btn-remove text-xs" data-key="'+escapeHtml(key)+'" style="color:var(--brick-600);" title="Remover do histórico">remover</button></td>' +
-          '</tr>' +
-          '<tr class="detail-row'+(isOpen?'':' hidden')+' no-print" id="hist-detail-'+idx+'">' +
-            '<td colspan="7" class="pb-3.5 px-3 pt-1">' +
-              '<label class="text-xs font-semibold block mb-1" style="color:var(--navy-900);">Observações</label>' +
-              '<textarea class="obs-textarea" data-key="'+escapeHtml(key)+'" placeholder="Anotações sobre este registro…">'+escapeHtml(it.observacoes||"")+'</textarea>' +
-              '<div class="flex items-center gap-2.5 mt-2">' +
-                '<button class="btn-small btn-save-obs" data-key="'+escapeHtml(key)+'">Salvar observação</button>' +
-                '<span class="obs-saved-msg text-xs hidden" style="color:var(--ink-400);">Salvo ✓</span>' +
-              '</div>' +
-            '</td>' +
-          '</tr>'
-        );
-        idx++;
+    if(!groupByDate){
+      const sorted = rows.slice().sort((a,b)=> (b.dataRegistro||"").localeCompare(a.dataRegistro||""));
+      for(const it of sorted){ html += personRowHtml(it, idx, prefix, bucket); idx++; }
+    } else {
+      const groups = {};
+      for(const r of rows){
+        const key = r.dataDO || r.portariaData || "__sem_data__";
+        (groups[key] = groups[key] || []).push(r);
+      }
+      const dateKeys = Object.keys(groups).filter(k => k !== "__sem_data__")
+        .sort((a,b) => (parsePortariaDate(b)||0) - (parsePortariaDate(a)||0));
+      if(groups["__sem_data__"]) dateKeys.push("__sem_data__");
+      for(const dateKey of dateKeys){
+        const groupRows = groups[dateKey].sort((a,b)=> (b.dataRegistro||"").localeCompare(a.dataRegistro||""));
+        const label = dateKey === "__sem_data__" ? "Data não identificada" : dateKey;
+        html += '<tr class="date-group-row"><td colspan="7" class="pt-4 pb-1.5 px-1 text-xs font-semibold" style="color:var(--gold-600);">'+escapeHtml(label)+' <span class="font-normal" style="color:var(--ink-400);">— '+groupRows.length+(groupRows.length===1?' registro':' registros')+'</span></td></tr>';
+        for(const it of groupRows){ html += personRowHtml(it, idx, prefix, bucket); idx++; }
       }
     }
     tbody.innerHTML = html;
+  }
+  function renderHistoryTable(){
+    state.historyRenderPending = false;
+    renderPeopleTable({ sourceRows: state.history, filters: state.historyFilters,
+      tbodyId:"history-tbody", emptyMsgId:"history-empty-msg", metaElId:"print-meta",
+      prefix:"hist", bucket:"atual", groupByDate:false });
+  }
+  function renderArchivedTable(){
+    state.archivedRenderPending = false;
+    renderPeopleTable({ sourceRows: state.archived, filters: state.archivedFilters,
+      tbodyId:"archived-tbody", emptyMsgId:"archived-empty-msg", metaElId:"print-meta-arquivado",
+      prefix:"arch", bucket:"arquivado", groupByDate:true });
   }
 
   // ---------- export ----------
@@ -957,11 +1105,11 @@
       "Tipo de Aposentadoria": r.tipoAto || "", "Fundamento Legal": r.fundamento || "",
       "Tipo de Proventos": r.tipoProventos || "", "Valor (R$)": r.valor || "",
       "Valor por Extenso": r.valorExtenso || "", "Nº Portaria": r.portariaNumero || "",
-      "Data da Portaria": r.portariaData || "", "Confiança": r.confidence || "",
+      "Data da Portaria": r.portariaData || "", "Data do D.O.": r.dataDO || "", "Confiança": r.confidence || "",
       "Observações": r.observacoes || "", "Registrado em": r.dataRegistro ? fmtDateTimeBR(r.dataRegistro) : ""
     }));
     const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [{wch:28},{wch:12},{wch:26},{wch:8},{wch:10},{wch:24},{wch:30},{wch:26},{wch:38},{wch:14},{wch:13},{wch:36},{wch:12},{wch:20},{wch:10},{wch:34},{wch:16}];
+    ws["!cols"] = [{wch:28},{wch:12},{wch:26},{wch:8},{wch:10},{wch:24},{wch:30},{wch:26},{wch:38},{wch:14},{wch:13},{wch:36},{wch:12},{wch:20},{wch:16},{wch:10},{wch:34},{wch:16}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, sheetName || "Aposentadorias");
     XLSX.writeFile(wb, filename);
@@ -998,11 +1146,11 @@
   const EXEMPLO = "Portaria Nº 01106500 de 07 de Agosto de 2026\nO(A) SECRETÁRIO(A) DA ADMINISTRAÇÃO resolve NOMEAR, em virtude de aprovação em concurso público, para o cargo de Analista Técnico:\nI PAULO ROBERTO FIGUEIREDO, proc. 500.1111.2026.0000111-01, SEC, Analista Técnico, matrícula 50000001, lotação Diretoria Regional de Educação 12.\n\nPortaria Nº 01106520 de 07 de Agosto de 2026\nO(A) SECRETÁRIO(A) DA ADMINISTRAÇÃO, no uso de suas atribuições conferidas pela Lei 10.955/07 e pelo Decreto 11.688/09, resolve conceder Aposentadoria Voluntária, com fundamento no Art. 3°, §§2°, 3º, 5°, I, e 7º da EC nº 26/2020, com redação dada pela EC n° 27/2021, ao(s) servidor(es) no(s) item(ns) a seguir discriminado(s):\nI ANTONIO CARLOS DE MATOS, proc. 700.4444.2026.0000444-04, SEC, Professor, PADRÃO N, GRAU VIA, matrícula 70000004, proventos integrais - R$19.850,30 (dezenove mil oitocentos e cinquenta reais e trinta centavos), compostos por Vencimento - R$11.000,00, 40.00 % Adic - R$8.850,30.\nII ROBERTA LIMA AZEVEDO, proc. 700.5555.2026.0000555-05, SEAGRI, Engenheiro Agronomo, matrícula 70000005, proventos integrais - R$14.200,00 (quatorze mil e duzentos reais), compostos por Vencimento - R$14.200,00.\nIII JOSE CARLOS RIBEIRO NETO, proc. 700.6666.2026.0000666-06, SEC, Professor, PADRÃO L, GRAU IIIB, matrícula 70000006, proventos proporcionais - R$6.400,00 (seis mil e quatrocentos reais), compostos por Vencimento - R$6.400,00.\n\nPortaria Nº 01106530 de 07 de Agosto de 2026\nO(A) SECRETÁRIO(A) DA ADMINISTRAÇÃO resolve conceder Aposentadoria por Invalidez, com fundamento no Art. 5º-A da EC nº 26/2020, ao(s) servidor(es) no(s) item(ns) a seguir discriminado(s):\nCLARICE FERREIRA DOS ANJOS proc 800 7777 2026 0000777 07 SEC Professor PADRAO K matricula80000007 proventosintegrais - R$5.600,00 (cinco mil e seiscentos reais) compostos por Vencimento - R$5.600,00.";
 
   // ---------- core processing ----------
-  function runProcessing(rawText){
+  function runProcessing(rawText, dataDO){
     const tipoKeywords = parseKeywordList(state.config.tipoKeyword, false);
     const orgaoKeywords = parseKeywordList(state.config.orgaoKeywords, true);
-    const t1 = enrichWithNte(parseTier1(rawText, tipoKeywords, orgaoKeywords));
-    const t2 = enrichWithNte(parseTier2(rawText, tipoKeywords, orgaoKeywords, t1));
+    const t1 = enrichWithNte(parseTier1(rawText, tipoKeywords, orgaoKeywords)).map(r => Object.assign(r, {dataDO}));
+    const t2 = enrichWithNte(parseTier2(rawText, tipoKeywords, orgaoKeywords, t1)).map(r => Object.assign(r, {dataDO}));
     return { t1, t2 };
   }
 
@@ -1013,7 +1161,11 @@
       renderReviewList(); renderStats();
       return;
     }
-    const { t1, t2 } = runProcessing(raw);
+    // Cada clique em Processar é o início de uma possível carga nova — o arquivamento do lote
+    // anterior (se houver algo genuinamente novo) acontece no máximo uma vez por carga.
+    state.archivedThisSession = false;
+    state.currentDoDate = extractMastheadDate(raw);
+    const { t1, t2 } = runProcessing(raw, state.currentDoDate);
     state.todayT1 = t1; state.todayT2 = t2;
     switchView("producao");
     renderReviewList(); renderStats();
@@ -1096,8 +1248,10 @@
 
   function switchView(view){
     document.getElementById("view-producao").classList.toggle("hidden", view !== "producao");
+    document.getElementById("view-arquivado").classList.toggle("hidden", view !== "arquivado");
     document.getElementById("view-config").classList.toggle("hidden", view !== "config");
     document.querySelectorAll(".nav-item").forEach(btn => btn.classList.toggle("active", btn.dataset.view === view));
+    if(view === "arquivado") renderArchivedTable();
   }
   function updateFbStatus(){
     const dot = document.getElementById("fb-dot");
@@ -1152,9 +1306,23 @@
       renderHistoryTable();
     });
     document.getElementById("btn-export-history").addEventListener("click", ()=>{
-      exportToExcel(applyHistoryFilters(state.history.slice()), "historico_aposentadorias.xlsx", "Histórico");
+      exportToExcel(applyHistoryFilters(state.history.slice(), state.historyFilters), "aposentadorias_atual.xlsx", "Atual");
     });
     document.getElementById("btn-print-history").addEventListener("click", ()=> window.print());
+
+    const archivedTableEl = document.getElementById("archived-table");
+    if(archivedTableEl){
+      archivedTableEl.addEventListener("input", (e)=>{
+        const key = e.target.getAttribute("data-filter");
+        if(!key) return;
+        state.archivedFilters[key] = e.target.value;
+        renderArchivedTable();
+      });
+      document.getElementById("btn-export-archived").addEventListener("click", ()=>{
+        exportToExcel(applyHistoryFilters(state.archived.slice(), state.archivedFilters), "aposentadorias_arquivado.xlsx", "Arquivado");
+      });
+      document.getElementById("btn-print-archived").addEventListener("click", ()=> window.print());
+    }
 
     document.body.addEventListener("click", async (e)=>{
       const confirmBtn = e.target.closest(".btn-confirm-review");
@@ -1164,7 +1332,7 @@
         if(c && c.nome && c.matricula){
           const res = await addNewToHistory([{ nome:c.nome, matricula:c.matricula, processo:null, orgao:null,
             cargoDetalhe:null, valor:null, tipoAto:null, fundamento:null, nte:c.nte||null, unidade:c.unidade||null,
-            portariaNumero:c.portariaNumero||null, portariaData:c.portariaData||null,
+            portariaNumero:c.portariaNumero||null, portariaData:c.portariaData||null, dataDO: state.currentDoDate,
             confidence:'baixa', snippet:c.snippet }]);
           renderStats(); renderHistoryTable(); pulse(document.getElementById("stat-hist-num"));
           confirmBtn.textContent = res.added>0 ? "Registrado ✓" : "Já registrado";
@@ -1176,14 +1344,16 @@
       if(removeBtn){
         e.stopPropagation();
         const key = removeBtn.getAttribute("data-key");
-        if(confirm("Remover este registro do histórico?")) removeHistoryRecord(key);
+        const bucket = removeBtn.getAttribute("data-bucket");
+        if(confirm("Remover este registro?")) removeHistoryRecord(bucket, key);
         return;
       }
       const saveObsBtn = e.target.closest(".btn-save-obs");
       if(saveObsBtn){
         const key = saveObsBtn.getAttribute("data-key");
+        const bucket = saveObsBtn.getAttribute("data-bucket");
         const textarea = saveObsBtn.closest("td").querySelector(".obs-textarea");
-        await saveObservacao(key, textarea.value);
+        await saveObservacao(bucket, key, textarea.value);
         const msg = saveObsBtn.parentElement.querySelector(".obs-saved-msg");
         msg.classList.remove("hidden");
         setTimeout(()=> msg.classList.add("hidden"), 2000);
@@ -1207,8 +1377,10 @@
     document.body.addEventListener("focusout", async (e)=>{
       if(!e.target.classList || !e.target.classList.contains("obs-textarea")) return;
       const key = e.target.getAttribute("data-key");
-      await saveObservacao(key, e.target.value);
+      const bucket = e.target.getAttribute("data-bucket");
+      await saveObservacao(bucket, key, e.target.value);
       if(state.historyRenderPending) renderHistoryTable();
+      if(state.archivedRenderPending) renderArchivedTable();
     });
   }
 
@@ -1216,6 +1388,7 @@
   async function init(){
     document.getElementById("today-date").textContent = new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'long', year:'numeric'});
     updateFbStatus();
+    await migrateFlatHistoryIfNeeded();
     state.config = await loadConfig();
     document.getElementById("cfg-tipo").value = state.config.tipoKeyword;
     document.getElementById("cfg-orgao").value = state.config.orgaoKeywords;
@@ -1223,7 +1396,8 @@
     renderNteStatus();
     renderStats();
     wireEvents();
-    subscribeHistory(onHistoryChanged);
+    subscribeBucket("atual", onHistoryChanged);
+    subscribeBucket("arquivado", onArchivedChanged);
   }
 
   init();
