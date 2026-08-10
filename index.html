@@ -466,7 +466,10 @@
   const MESES_PT = {janeiro:0,fevereiro:1,marco:2,abril:3,maio:4,junho:5,julho:6,agosto:7,setembro:8,outubro:9,novembro:10,dezembro:11};
   function parsePortariaDate(str){
     if(!str) return null;
-    const m = String(str).match(/(\d{1,2})\s+de\s+([A-Za-zÀ-ÿ]+)\s+de\s+(\d{4})/i);
+    const s = String(str).trim();
+    const num = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(num) return new Date(parseInt(num[3],10), parseInt(num[2],10)-1, parseInt(num[1],10));
+    const m = s.match(/(\d{1,2})\s+de\s+([A-Za-zÀ-ÿ]+)\s+de\s+(\d{4})/i);
     if(!m) return null;
     const monthKey = m[2].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const month = MESES_PT[monthKey];
@@ -475,12 +478,17 @@
   }
   // Data do D.O.: extraída do próprio cabeçalho/capa da edição (ex.: "SALVADOR, SEXTA-FEIRA, 7 DE
   // AGOSTO DE 2026"), não da data de cada Portaria individual — é UMA data por PDF carregado.
+  // Formato de saída: DD/MM/AAAA (numérico, com zero à esquerda).
   function extractMastheadDate(fullText){
     const head = String(fullText||"").slice(0, 3000);
     const m = head.match(/(\d{1,2})\s+DE\s+([A-ZÇÃÕÁÉÍÓÚ]+)\s+DE\s+(\d{4})/i);
     if(!m) return null;
-    const mes = m[2].charAt(0).toUpperCase() + m[2].slice(1).toLowerCase();
-    return m[1] + ' de ' + mes + ' de ' + m[3];
+    const monthKey = m[2].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const monthNum = MESES_PT[monthKey];
+    if(monthNum === undefined) return null;
+    const dd = String(parseInt(m[1],10)).padStart(2,'0');
+    const mm = String(monthNum+1).padStart(2,'0');
+    return dd + '/' + mm + '/' + m[3];
   }
 
   // ---------- TIER 1: structured extraction ----------
