@@ -113,8 +113,8 @@
   .fb-dot{width:7px;height:7px;border-radius:999px;flex-shrink:0;background:var(--ink-400);}
   .main-content{flex:1;min-width:0;}
   .module-view.hidden{display:none;}
-  .content-wrap{max-width:56rem;margin:0 auto;padding:2rem 1.5rem 4rem;}
-  @media (min-width:640px){ .content-wrap{padding:2.75rem 2.5rem 4rem;} }
+  .content-wrap{max-width:100%;padding:2rem 1.5rem 4rem;}
+  @media (min-width:640px){ .content-wrap{padding:2.25rem 2rem 4rem;} }
   .module-header{margin-bottom:2rem;}
   #sticky-top{margin-bottom:0.75rem;}
 
@@ -257,6 +257,7 @@
           <thead class="sticky-head">
             <tr class="text-left text-xs" style="color:var(--navy-900); border-bottom:1px solid var(--paper-border); background:#fff;">
               <th class="py-2 pr-3 font-bold">NTE</th>
+              <th class="py-2 pr-3 font-bold">Município</th>
               <th class="py-2 pr-3 font-bold">Unidade</th>
               <th class="py-2 pr-3 font-bold">Matrícula</th>
               <th class="py-2 pr-3 font-bold">Nome</th>
@@ -266,6 +267,7 @@
             </tr>
             <tr class="filter-row no-print" style="background:#fff;">
               <th class="pb-2 pr-3"><input data-filter="nte" type="text" placeholder="filtrar…" class="filter-input"></th>
+              <th class="pb-2 pr-3"><input data-filter="municipio" type="text" placeholder="filtrar…" class="filter-input"></th>
               <th class="pb-2 pr-3"><input data-filter="unidade" type="text" placeholder="filtrar…" class="filter-input"></th>
               <th class="pb-2 pr-3"><input data-filter="matricula" type="text" placeholder="filtrar…" class="filter-input"></th>
               <th class="pb-2 pr-3"><input data-filter="nome" type="text" placeholder="filtrar…" class="filter-input"></th>
@@ -316,6 +318,7 @@
           <thead class="sticky-head">
             <tr class="text-left text-xs" style="color:var(--navy-900); border-bottom:1px solid var(--paper-border); background:#fff;">
               <th class="py-2 pr-3 font-bold">NTE</th>
+              <th class="py-2 pr-3 font-bold">Município</th>
               <th class="py-2 pr-3 font-bold">Unidade</th>
               <th class="py-2 pr-3 font-bold">Matrícula</th>
               <th class="py-2 pr-3 font-bold">Nome</th>
@@ -325,6 +328,7 @@
             </tr>
             <tr class="filter-row no-print" style="background:#fff;">
               <th class="pb-2 pr-3"><input data-filter="nte" type="text" placeholder="filtrar…" class="filter-input"></th>
+              <th class="pb-2 pr-3"><input data-filter="municipio" type="text" placeholder="filtrar…" class="filter-input"></th>
               <th class="pb-2 pr-3"><input data-filter="unidade" type="text" placeholder="filtrar…" class="filter-input"></th>
               <th class="pb-2 pr-3"><input data-filter="matricula" type="text" placeholder="filtrar…" class="filter-input"></th>
               <th class="pb-2 pr-3"><input data-filter="nome" type="text" placeholder="filtrar…" class="filter-input"></th>
@@ -418,8 +422,8 @@
 
   <!-- BASE NTE -->
   <section class="paper-card p-5 sm:p-6">
-    <h2 class="f-display text-lg mb-1" style="color:var(--navy-900);">Base de matrículas × NTE/Unidade</h2>
-    <p class="text-xs mb-3" style="color:var(--ink-400);">Planilha (.xlsx ou .csv) com as colunas Matrícula, Nome, NTE e Unidade. Usada para preencher esses campos nos registros automaticamente. Recarregar substitui a base inteira; registros já salvos são atualizados, sem perder o resto dos dados.</p>
+    <h2 class="f-display text-lg mb-1" style="color:var(--navy-900);">Base de matrículas × NTE/Município/Unidade</h2>
+    <p class="text-xs mb-3" style="color:var(--ink-400);">Planilha (.xlsx ou .csv) com as colunas Matrícula, Nome, NTE, Município e Unidade. Usada para preencher esses campos nos registros automaticamente. Recarregar substitui a base inteira; registros já salvos são atualizados, sem perder o resto dos dados.</p>
     <div class="flex flex-wrap items-center gap-3">
       <button id="btn-nte-upload" class="btn-ghost rounded-lg px-4 py-2 text-sm">Carregar planilha</button>
       <input id="nte-file-input" type="file" accept=".xlsx,.xls,.csv" class="hidden">
@@ -428,14 +432,19 @@
     <p id="nte-error" class="text-sm mt-2.5 hidden" style="color:var(--brick-600);"></p>
 
     <div class="mt-4 pt-4" style="border-top:1px solid var(--paper-border);">
-      <p class="text-xs font-semibold mb-2.5" style="color:var(--navy-900);">Ou inclua um registro manualmente</p>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <p class="text-xs font-semibold mb-1" style="color:var(--navy-900);">Ou inclua um registro manualmente</p>
+      <p class="text-xs mb-2.5" style="color:var(--ink-400);">Digite a matrícula: se ela já existir na base, os outros campos preenchem sozinhos para você corrigir.</p>
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
         <input id="manual-nte-matricula" type="text" placeholder="Matrícula" class="filter-input" style="padding:7px 9px;">
         <input id="manual-nte-nome" type="text" placeholder="Nome" class="filter-input" style="padding:7px 9px;">
         <input id="manual-nte-nte" type="text" placeholder="NTE" class="filter-input" style="padding:7px 9px;">
+        <input id="manual-nte-municipio" type="text" placeholder="Município" class="filter-input" style="padding:7px 9px;">
         <input id="manual-nte-unidade" type="text" placeholder="Unidade" class="filter-input" style="padding:7px 9px;">
       </div>
-      <button id="btn-manual-nte-add" class="btn-gold rounded-lg px-4 py-2 text-sm mt-2.5">Incluir</button>
+      <div class="flex items-center gap-2.5 mt-2.5">
+        <button id="btn-manual-nte-add" class="btn-gold rounded-lg px-4 py-2 text-sm">Incluir</button>
+        <button id="btn-manual-nte-delete" class="rounded-lg px-4 py-2 text-sm hidden" style="border:1px solid var(--brick-600); color:var(--brick-600); background:#fff;">Excluir esta matrícula</button>
+      </div>
       <p id="manual-nte-msg" class="text-xs mt-2 hidden"></p>
     </div>
   </section>
@@ -859,6 +868,35 @@
     memoryFallback = memoryFallback || {};
     memoryFallback.nteBase = nteBase;
   }
+  // Persiste o resultado do último processamento (itens do Tier 1/2, data do D.O., trava de
+  // arquivamento da sessão) para que um F5 não zere os cards do dashboard nem a fila de revisão.
+  async function saveSessionSnapshot(){
+    const snapshot = { todayT1: state.todayT1, todayT2: state.todayT2, currentDoDate: state.currentDoDate, archivedThisSession: state.archivedThisSession };
+    if(fbDb){ try{ await fbDb.ref(FB_ROOT+"/sessionAtual").set(snapshot); return; }catch(e){ console.error(e); } }
+    if(windowStorageAvailable){
+      try{
+        const res = await window.storage.get(STORAGE_KEY).catch(()=>null);
+        const existing = (res && res.value) ? JSON.parse(res.value) : { config: state.config };
+        existing.sessionAtual = snapshot;
+        await window.storage.set(STORAGE_KEY, JSON.stringify(existing));
+        return;
+      }catch(e){}
+    }
+    memoryFallback = memoryFallback || {};
+    memoryFallback.sessionAtual = snapshot;
+  }
+  async function loadSessionSnapshot(){
+    const empty = { todayT1:[], todayT2:[], currentDoDate:null, archivedThisSession:false };
+    if(fbDb){
+      try{ const snap = await fbDb.ref(FB_ROOT+"/sessionAtual").once("value"); return snap.exists() ? Object.assign({}, empty, snap.val()) : empty; }
+      catch(e){ console.error(e); return empty; }
+    }
+    if(windowStorageAvailable){
+      try{ const res = await window.storage.get(STORAGE_KEY); if(res && res.value){ return Object.assign({}, empty, JSON.parse(res.value).sessionAtual||{}); } }
+      catch(e){}
+    }
+    return (memoryFallback && memoryFallback.sessionAtual) || empty;
+  }
   // Inclusão manual de uma única matrícula: grava só esse nó (não reescreve a base inteira,
   // que pode ter dezenas de milhares de linhas vindas da planilha). Retorna se era nova.
   async function addManualNteEntry(matricula, entry){
@@ -876,6 +914,22 @@
     state.nteBase = { map: Object.assign({}, state.nteBase.map, {[matricula]:entry}), count:newCount, atualizadoEm };
     return isNew;
   }
+  async function removeNteEntry(matricula){
+    if(!state.nteBase.map[matricula]) return;
+    const newCount = Math.max(0, state.nteBase.count - 1);
+    const atualizadoEm = new Date().toISOString();
+    const updatedMap = Object.assign({}, state.nteBase.map);
+    delete updatedMap[matricula];
+    if(fbDb){
+      try{
+        await fbDb.ref(FB_ROOT+"/baseNTE/map/"+matricula).remove();
+        await fbDb.ref(FB_ROOT+"/baseNTE").update({ count:newCount, atualizadoEm });
+      }catch(e){ console.error(e); }
+    } else {
+      await saveNteBase({ map: updatedMap, count:newCount, atualizadoEm });
+    }
+    state.nteBase = { map: updatedMap, count:newCount, atualizadoEm };
+  }
   async function parseNteBaseFile(file){
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, {type:"array"});
@@ -888,6 +942,7 @@
       const matKey = keys.find(k => /matr[ií]cula/i.test(k));
       const nomeKey = keys.find(k => /^nome/i.test(k));
       const nteKey = keys.find(k => /^nte/i.test(k));
+      const municipioKey = keys.find(k => /munic[ií]pio/i.test(k));
       const unidadeKey = keys.find(k => /unidade/i.test(k) || /lota[cç][aã]o/i.test(k));
       if(!matKey) continue;
       const matricula = String(row[matKey]).trim().replace(/\D/g,"");
@@ -895,6 +950,7 @@
       map[matricula] = {
         nome: nomeKey ? String(row[nomeKey]).trim() : "",
         nte: nteKey ? String(row[nteKey]).trim() : "",
+        municipio: municipioKey ? String(row[municipioKey]).trim() : "",
         unidade: unidadeKey ? String(row[unidadeKey]).trim() : ""
       };
       count++;
@@ -928,23 +984,25 @@
       const ref = lookupReferencia(it.matricula);
       return Object.assign({}, it, {
         nte: ref && ref.nte ? ref.nte : null,
+        municipio: ref && ref.municipio ? ref.municipio : null,
         unidade: ref && ref.unidade ? ref.unidade : null
       });
     });
   }
-  // Preenche NTE/Unidade de registros (atual + arquivado) que ficaram sem, porque a base foi
-  // carregada depois. Só toca nos campos vazios — nunca sobrescreve um valor já preenchido.
+  // Preenche NTE/Município/Unidade de registros (atual + arquivado) que ficaram sem, porque a
+  // base foi carregada depois. Só toca nos campos vazios — nunca sobrescreve um valor já preenchido.
   async function backfillNteInHistory(){
     let total = 0;
     for(const bucket of ["atual","arquivado"]){
       const rows = bucket==="atual" ? state.history : state.archived;
-      const pendentes = rows.filter(r => (!r.nte || !r.unidade) && lookupReferencia(r.matricula));
+      const pendentes = rows.filter(r => (!r.nte || !r.municipio || !r.unidade) && lookupReferencia(r.matricula));
       if(!pendentes.length) continue;
       total += pendentes.length;
       for(const r of pendentes){
         const ref = lookupReferencia(r.matricula);
         const patch = {};
         if(!r.nte && ref.nte) patch.nte = ref.nte;
+        if(!r.municipio && ref.municipio) patch.municipio = ref.municipio;
         if(!r.unidade && ref.unidade) patch.unidade = ref.unidade;
         if(Object.keys(patch).length) await updateInBucket(bucket, r._fbKey, patch);
       }
@@ -1015,9 +1073,9 @@
         '<div class="flex flex-wrap items-start justify-between gap-2">' +
           '<div>' +
             (c.nome ? '<p class="text-sm font-semibold" style="color:var(--navy-900);">'+escapeHtml(c.nome)+'</p>' : '<p class="text-sm italic" style="color:var(--ink-400);">Nome não identificado automaticamente</p>') +
-            (c.matricula ? '<p class="text-xs f-mono mt-0.5" style="color:var(--ink-600);">matrícula '+escapeHtml(c.matricula)+(c.nte?' · NTE '+escapeHtml(c.nte):'')+(c.unidade?' · '+escapeHtml(c.unidade):'')+'</p>' : '') +
+            (c.matricula ? '<p class="text-xs f-mono mt-0.5" style="color:var(--ink-600);">matrícula '+escapeHtml(c.matricula)+(c.nte?' · NTE '+escapeHtml(c.nte):'')+(c.municipio?' · '+escapeHtml(c.municipio):'')+(c.unidade?' · '+escapeHtml(c.unidade):'')+'</p>' : '') +
           '</div>' +
-          (hasBoth ? '<button class="btn-small btn-confirm-review" data-review-idx="'+idx+'">Confirmar e registrar</button>' : '') +
+          (hasBoth ? '<button class="btn-small btn-confirm-review" data-review-idx="'+idx+'"'+(c.confirmado?' disabled':'')+'>'+(c.confirmado?'Registrado ✓':'Confirmar e registrar')+'</button>' : '') +
         '</div>' +
         '<p class="text-xs mt-2 leading-relaxed" style="color:var(--ink-600);">…'+escapeHtml(c.snippet)+'…</p>' +
       '</div>'
@@ -1033,6 +1091,7 @@
 
   const HISTORY_FILTER_FIELDS = [
     { key:"nte", field:"nte" },
+    { key:"municipio", field:"municipio" },
     { key:"unidade", field:"unidade" },
     { key:"matricula", field:"matricula" },
     { key:"nome", field:"nome" },
@@ -1062,6 +1121,7 @@
     return (
       '<tr class="ledger-row ledger-row-sec fade-in" data-detail-target="'+prefix+'-detail-'+idx+'" data-key="'+escapeHtml(key)+'" data-bucket="'+bucket+'">' +
         '<td class="py-2.5 pr-3">'+escapeHtml(it.nte||"—")+'</td>' +
+        '<td class="py-2.5 pr-3 truncate-cell" title="'+escapeHtml(it.municipio||"")+'">'+escapeHtml(it.municipio||"—")+'</td>' +
         '<td class="py-2.5 pr-3 truncate-cell" title="'+escapeHtml(it.unidade||"")+'">'+escapeHtml(it.unidade||"—")+'</td>' +
         '<td class="py-2.5 pr-3 f-mono">'+escapeHtml(it.matricula||"—")+'</td>' +
         '<td class="py-2.5 pr-3">'+escapeHtml(it.nome)+(hasObs?'<span class="note-dot" title="Tem observação"></span>':'')+'</td>' +
@@ -1070,7 +1130,7 @@
         '<td class="py-2.5 pr-2 text-right no-print"><button class="btn-remove text-xs" data-key="'+escapeHtml(key)+'" data-bucket="'+bucket+'" style="color:var(--brick-600);" title="Remover">remover</button></td>' +
       '</tr>' +
       '<tr class="detail-row'+(isOpen?'':' hidden')+' no-print" id="'+prefix+'-detail-'+idx+'">' +
-        '<td colspan="7" class="pb-3.5 px-3 pt-1">' +
+        '<td colspan="8" class="pb-3.5 px-3 pt-1">' +
           '<label class="text-xs font-semibold block mb-1" style="color:var(--navy-900);">Observações</label>' +
           '<textarea class="obs-textarea" data-key="'+escapeHtml(key)+'" data-bucket="'+bucket+'" placeholder="Anotações sobre este registro…">'+escapeHtml(it.observacoes||"")+'</textarea>' +
           '<div class="flex items-center gap-2.5 mt-2">' +
@@ -1118,7 +1178,7 @@
       for(const dateKey of dateKeys){
         const groupRows = groups[dateKey].sort((a,b)=> (b.dataRegistro||"").localeCompare(a.dataRegistro||""));
         const label = dateKey === "__sem_data__" ? "Data não identificada" : dateKey;
-        html += '<tr class="date-group-row"><td colspan="7" class="pt-4 pb-1.5 px-1 text-xs font-semibold" style="color:var(--gold-600);">'+escapeHtml(label)+' <span class="font-normal" style="color:var(--ink-400);">— '+groupRows.length+(groupRows.length===1?' registro':' registros')+'</span></td></tr>';
+        html += '<tr class="date-group-row"><td colspan="8" class="pt-4 pb-1.5 px-1 text-xs font-semibold" style="color:var(--gold-600);">'+escapeHtml(label)+' <span class="font-normal" style="color:var(--ink-400);">— '+groupRows.length+(groupRows.length===1?' registro':' registros')+'</span></td></tr>';
         for(const it of groupRows){ html += personRowHtml(it, idx, prefix, bucket); idx++; }
       }
     }
@@ -1142,7 +1202,7 @@
     if(!rows.length) return;
     const data = rows.map(r => ({
       "Nome": r.nome || "", "Matrícula": r.matricula || "", "Processo": r.processo || "",
-      "Órgão": r.orgao || "", "NTE": r.nte || "", "Unidade": r.unidade || "", "Cargo/Detalhe": r.cargoDetalhe || "",
+      "Órgão": r.orgao || "", "NTE": r.nte || "", "Município": r.municipio || "", "Unidade": r.unidade || "", "Cargo/Detalhe": r.cargoDetalhe || "",
       "Tipo de Aposentadoria": r.tipoAto || "", "Fundamento Legal": r.fundamento || "",
       "Tipo de Proventos": r.tipoProventos || "", "Valor (R$)": r.valor || "",
       "Valor por Extenso": r.valorExtenso || "", "Nº Portaria": r.portariaNumero || "",
@@ -1150,7 +1210,7 @@
       "Observações": r.observacoes || "", "Registrado em": r.dataRegistro ? fmtDateTimeBR(r.dataRegistro) : ""
     }));
     const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [{wch:28},{wch:12},{wch:26},{wch:8},{wch:10},{wch:24},{wch:30},{wch:26},{wch:38},{wch:14},{wch:13},{wch:36},{wch:12},{wch:20},{wch:16},{wch:10},{wch:34},{wch:16}];
+    ws["!cols"] = [{wch:28},{wch:12},{wch:26},{wch:8},{wch:10},{wch:20},{wch:24},{wch:30},{wch:26},{wch:38},{wch:14},{wch:13},{wch:36},{wch:12},{wch:20},{wch:16},{wch:10},{wch:34},{wch:16}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, sheetName || "Aposentadorias");
     XLSX.writeFile(wb, filename);
@@ -1221,14 +1281,16 @@
       pulse(document.getElementById("stat-hist-num"));
     }
     showProcessMessage(t1.length, matched.length, t2.length, added, skipped, state.config.tipoKeyword);
+    await saveSessionSnapshot();
   }
 
-  function onLimpar(){
+  async function onLimpar(){
     document.getElementById("input-text").value = "";
-    state.todayT1 = []; state.todayT2 = [];
+    state.todayT1 = []; state.todayT2 = []; state.currentDoDate = null;
     renderReviewList(); renderStats();
     document.getElementById("process-msg").classList.add("hidden");
     showPdfError(null);
+    await saveSessionSnapshot();
   }
 
   async function handlePdfFile(file){
@@ -1291,6 +1353,7 @@
     const matriculaEl = document.getElementById("manual-nte-matricula");
     const nomeEl = document.getElementById("manual-nte-nome");
     const nteEl = document.getElementById("manual-nte-nte");
+    const municipioEl = document.getElementById("manual-nte-municipio");
     const unidadeEl = document.getElementById("manual-nte-unidade");
     const msg = document.getElementById("manual-nte-msg");
     const matricula = matriculaEl.value.trim().replace(/\D/g,"");
@@ -1300,13 +1363,48 @@
       msg.classList.remove("hidden");
       return;
     }
-    const entry = { nome: nomeEl.value.trim(), nte: nteEl.value.trim(), unidade: unidadeEl.value.trim() };
+    const entry = { nome: nomeEl.value.trim(), nte: nteEl.value.trim(), municipio: municipioEl.value.trim(), unidade: unidadeEl.value.trim() };
     const isNew = await addManualNteEntry(matricula, entry);
     renderNteStatus();
     const preenchidos = await backfillNteInHistory();
     if(preenchidos>0){ renderHistoryTable(); renderArchivedTable(); }
-    matriculaEl.value=""; nomeEl.value=""; nteEl.value=""; unidadeEl.value="";
+    matriculaEl.value=""; nomeEl.value=""; nteEl.value=""; municipioEl.value=""; unidadeEl.value="";
+    document.getElementById("btn-manual-nte-delete").classList.add("hidden");
     msg.textContent = (isNew ? "Matrícula incluída." : "Matrícula atualizada.") + (preenchidos>0 ? " "+preenchidos+" registro(s) atualizado(s)." : "");
+    msg.style.color = "var(--navy-800)";
+    msg.classList.remove("hidden");
+    setTimeout(()=>msg.classList.add("hidden"), 4000);
+  }
+
+  function handleManualNteLookup(){
+    const matricula = document.getElementById("manual-nte-matricula").value.trim().replace(/\D/g,"");
+    const deleteBtn = document.getElementById("btn-manual-nte-delete");
+    const nomeEl = document.getElementById("manual-nte-nome");
+    const nteEl = document.getElementById("manual-nte-nte");
+    const municipioEl = document.getElementById("manual-nte-municipio");
+    const unidadeEl = document.getElementById("manual-nte-unidade");
+    const entry = matricula ? state.nteBase.map[matricula] : null;
+    if(entry){
+      nomeEl.value = entry.nome || ""; nteEl.value = entry.nte || "";
+      municipioEl.value = entry.municipio || ""; unidadeEl.value = entry.unidade || "";
+      deleteBtn.classList.remove("hidden");
+    } else {
+      nomeEl.value = ""; nteEl.value = ""; municipioEl.value = ""; unidadeEl.value = "";
+      deleteBtn.classList.add("hidden");
+    }
+  }
+
+  async function handleManualNteDelete(){
+    const matriculaEl = document.getElementById("manual-nte-matricula");
+    const matricula = matriculaEl.value.trim().replace(/\D/g,"");
+    if(!matricula || !state.nteBase.map[matricula]) return;
+    if(!confirm("Excluir a matrícula "+matricula+" da base de NTE/Unidade? Isso não afeta registros de pessoas já salvos.")) return;
+    await removeNteEntry(matricula);
+    renderNteStatus();
+    ["manual-nte-matricula","manual-nte-nome","manual-nte-nte","manual-nte-municipio","manual-nte-unidade"].forEach(id=> document.getElementById(id).value="");
+    document.getElementById("btn-manual-nte-delete").classList.add("hidden");
+    const msg = document.getElementById("manual-nte-msg");
+    msg.textContent = "Matrícula "+matricula+" excluída da base.";
     msg.style.color = "var(--navy-800)";
     msg.classList.remove("hidden");
     setTimeout(()=>msg.classList.add("hidden"), 4000);
@@ -1350,7 +1448,9 @@
     const nteFileInput = document.getElementById("nte-file-input");
     document.getElementById("btn-nte-upload").addEventListener("click", ()=> nteFileInput.click());
     document.getElementById("btn-manual-nte-add").addEventListener("click", handleManualNteAdd);
-    ["manual-nte-matricula","manual-nte-nome","manual-nte-nte","manual-nte-unidade"].forEach(id=>{
+    document.getElementById("btn-manual-nte-delete").addEventListener("click", handleManualNteDelete);
+    document.getElementById("manual-nte-matricula").addEventListener("input", handleManualNteLookup);
+    ["manual-nte-matricula","manual-nte-nome","manual-nte-nte","manual-nte-municipio","manual-nte-unidade"].forEach(id=>{
       document.getElementById(id).addEventListener("keydown", (e)=>{ if(e.key==="Enter") handleManualNteAdd(); });
     });
     nteFileInput.addEventListener("change", (e)=>{ if(e.target.files[0]) handleNteBaseFile(e.target.files[0]); nteFileInput.value = ""; });
@@ -1401,12 +1501,14 @@
         const c = state.todayT2[idx];
         if(c && c.nome && c.matricula){
           const res = await addNewToHistory([{ nome:c.nome, matricula:c.matricula, processo:null, orgao:null,
-            cargoDetalhe:null, valor:null, tipoAto:null, fundamento:null, nte:c.nte||null, unidade:c.unidade||null,
+            cargoDetalhe:null, valor:null, tipoAto:null, fundamento:null, nte:c.nte||null, municipio:c.municipio||null, unidade:c.unidade||null,
             portariaNumero:c.portariaNumero||null, portariaData:c.portariaData||null, dataDO: state.currentDoDate,
             confidence:'baixa', snippet:c.snippet }]);
           renderStats(); renderHistoryTable(); pulse(document.getElementById("stat-hist-num"));
           confirmBtn.textContent = res.added>0 ? "Registrado ✓" : "Já registrado";
           confirmBtn.disabled = true;
+          state.todayT2[idx] = Object.assign({}, c, { confirmado:true });
+          await saveSessionSnapshot();
         }
         return;
       }
@@ -1464,6 +1566,12 @@
     document.getElementById("cfg-orgao").value = state.config.orgaoKeywords;
     state.nteBase = await loadNteBase();
     renderNteStatus();
+    const session = await loadSessionSnapshot();
+    state.todayT1 = session.todayT1 || [];
+    state.todayT2 = session.todayT2 || [];
+    state.currentDoDate = session.currentDoDate || null;
+    state.archivedThisSession = session.archivedThisSession || false;
+    renderReviewList();
     renderStats();
     wireEvents();
     subscribeBucket("atual", onHistoryChanged);
