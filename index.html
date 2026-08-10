@@ -150,15 +150,27 @@
 
   @media print{
     .sidebar, footer, .no-print{display:none !important;}
+    #sticky-top, #review-section{display:none !important;}
     .app-shell{display:block !important;}
     .main-content{width:100% !important;}
     .content-wrap{max-width:none !important; padding:0 !important;}
-    .print-header{display:block !important; margin-bottom:14px;}
+    .print-header{display:block !important; margin-bottom:16px;}
+    .paper-card{border:none !important; padding:0 !important; box-shadow:none !important;}
     .truncate-cell{max-width:none; white-space:normal;}
     .sticky-head tr{position:static !important;}
-    table{font-size:11px;}
-    th, td{padding:4px 6px !important;}
-    .selo-sec, .orgao-pill, .badge-revisar{border:1px solid #999 !important; background:none !important; box-shadow:none !important;}
+    .note-dot{display:none !important;}
+    table{font-size:11px; width:100%; border-collapse:collapse;}
+    th, td{padding:5px 7px !important; border:1px solid #bbb;}
+    thead th{
+      background:#EDE7D3 !important; color:#111 !important; font-weight:700 !important;
+      -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    }
+    .ledger-row-sec{background:none !important;}
+    .ledger-row-sec td:first-child{border-left:1px solid #bbb !important;}
+    .date-group-row td{
+      background:#EDE7D3 !important; color:#111 !important; font-weight:700 !important; border:1px solid #bbb;
+      -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    }
   }
 </style>
 </head>
@@ -268,6 +280,7 @@
         <table class="w-full text-sm border-collapse" id="history-table">
           <thead class="sticky-head">
             <tr class="text-left text-xs" style="color:var(--navy-900); border-bottom:1px solid var(--paper-border); background:#fff;">
+              <th class="py-2 pr-3 font-bold">Polo</th>
               <th class="py-2 pr-3 font-bold">NTE</th>
               <th class="py-2 pr-3 font-bold">Município</th>
               <th class="py-2 pr-3 font-bold">Unidade</th>
@@ -278,6 +291,7 @@
               <th class="py-2 pr-2 font-bold no-print"></th>
             </tr>
             <tr class="filter-row no-print" style="background:#fff;">
+              <th class="pb-2 pr-3"><input data-filter="polo" type="text" placeholder="filtrar…" class="filter-input"></th>
               <th class="pb-2 pr-3"><input data-filter="nte" type="text" placeholder="filtrar…" class="filter-input"></th>
               <th class="pb-2 pr-3"><input data-filter="municipio" type="text" placeholder="filtrar…" class="filter-input"></th>
               <th class="pb-2 pr-3"><input data-filter="unidade" type="text" placeholder="filtrar…" class="filter-input"></th>
@@ -303,7 +317,7 @@
 <div id="view-arquivado" class="module-view hidden">
 <div class="content-wrap">
 
-  <div class="module-header">
+  <div class="module-header no-print">
     <h1 class="f-display text-2xl" style="color:var(--navy-900);">Arquivado</h1>
     <p class="text-sm mt-0.5" style="color:var(--ink-600);">Cargas anteriores — nada aqui é apagado quando uma carga nova chega</p>
   </div>
@@ -329,6 +343,7 @@
         <table class="w-full text-sm border-collapse" id="archived-table">
           <thead class="sticky-head">
             <tr class="text-left text-xs" style="color:var(--navy-900); border-bottom:1px solid var(--paper-border); background:#fff;">
+              <th class="py-2 pr-3 font-bold">Polo</th>
               <th class="py-2 pr-3 font-bold">NTE</th>
               <th class="py-2 pr-3 font-bold">Município</th>
               <th class="py-2 pr-3 font-bold">Unidade</th>
@@ -339,6 +354,7 @@
               <th class="py-2 pr-2 font-bold no-print"></th>
             </tr>
             <tr class="filter-row no-print" style="background:#fff;">
+              <th class="pb-2 pr-3"><input data-filter="polo" type="text" placeholder="filtrar…" class="filter-input"></th>
               <th class="pb-2 pr-3"><input data-filter="nte" type="text" placeholder="filtrar…" class="filter-input"></th>
               <th class="pb-2 pr-3"><input data-filter="municipio" type="text" placeholder="filtrar…" class="filter-input"></th>
               <th class="pb-2 pr-3"><input data-filter="unidade" type="text" placeholder="filtrar…" class="filter-input"></th>
@@ -461,6 +477,32 @@
         <button id="btn-manual-nte-delete" class="rounded-lg px-4 py-2 text-sm hidden" style="border:1px solid var(--brick-600); color:var(--brick-600); background:#fff;">Excluir esta matrícula</button>
       </div>
       <p id="manual-nte-msg" class="text-xs mt-2 hidden"></p>
+    </div>
+  </section>
+
+  <!-- BASE POLO -->
+  <section class="paper-card p-5 sm:p-6">
+    <h2 class="f-display text-lg mb-1" style="color:var(--navy-900);">Base de Polo × NTE</h2>
+    <p class="text-xs mb-3" style="color:var(--ink-400);">Planilha (.xlsx ou .csv) com as colunas NTE e Polo — relaciona cada NTE ao seu Polo (não usa matrícula). Recarregar substitui a base inteira; relações já salvas são atualizadas, sem perder o resto.</p>
+    <div class="flex flex-wrap items-center gap-3">
+      <button id="btn-polo-upload" class="btn-ghost rounded-lg px-4 py-2 text-sm">Carregar planilha</button>
+      <input id="polo-file-input" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+      <span id="polo-status" class="text-xs" style="color:var(--ink-400);">Nenhuma base carregada ainda — o campo Polo fica vazio até você carregar uma planilha.</span>
+    </div>
+    <p id="polo-error" class="text-sm mt-2.5 hidden" style="color:var(--brick-600);"></p>
+
+    <div class="mt-4 pt-4" style="border-top:1px solid var(--paper-border);">
+      <p class="text-xs font-semibold mb-1" style="color:var(--navy-900);">Ou inclua uma relação manualmente</p>
+      <p class="text-xs mb-2.5" style="color:var(--ink-400);">Digite o NTE: se ele já tiver Polo definido, o campo preenche sozinho para você corrigir.</p>
+      <div class="grid grid-cols-2 gap-2.5">
+        <input id="manual-polo-nte" type="text" placeholder="NTE" class="filter-input" style="padding:7px 9px;">
+        <input id="manual-polo-polo" type="text" placeholder="Polo" class="filter-input" style="padding:7px 9px;">
+      </div>
+      <div class="flex items-center gap-2.5 mt-2.5">
+        <button id="btn-manual-polo-add" class="btn-gold rounded-lg px-4 py-2 text-sm">Incluir</button>
+        <button id="btn-manual-polo-delete" class="rounded-lg px-4 py-2 text-sm hidden" style="border:1px solid var(--brick-600); color:var(--brick-600); background:#fff;">Excluir este NTE</button>
+      </div>
+      <p id="manual-polo-msg" class="text-xs mt-2 hidden"></p>
     </div>
   </section>
 
@@ -974,6 +1016,86 @@
     return { map, count, atualizadoEm: new Date().toISOString() };
   }
 
+  // ---------- base de Polo × NTE (relaciona NTE a Polo — chave é o NTE, não a matrícula) ----------
+  function normalizeNteKey(s){ return String(s||"").trim().toUpperCase(); }
+  async function loadPoloBase(){
+    const empty = { map:{}, count:0, atualizadoEm:null };
+    if(fbDb){
+      try{ const snap = await fbDb.ref(FB_ROOT+"/basePolo").once("value"); return snap.exists() ? Object.assign({}, empty, snap.val()) : empty; }
+      catch(e){ console.error(e); return empty; }
+    }
+    if(windowStorageAvailable){
+      try{ const res = await window.storage.get(STORAGE_KEY); if(res && res.value){ return Object.assign({}, empty, JSON.parse(res.value).poloBase||{}); } }
+      catch(e){}
+    }
+    return (memoryFallback && memoryFallback.poloBase) || empty;
+  }
+  async function savePoloBase(poloBase){
+    if(fbDb){ try{ await fbDb.ref(FB_ROOT+"/basePolo").set(poloBase); return; }catch(e){ console.error(e); } }
+    if(windowStorageAvailable){
+      try{
+        const res = await window.storage.get(STORAGE_KEY).catch(()=>null);
+        const existing = (res && res.value) ? JSON.parse(res.value) : { config: state.config };
+        existing.poloBase = poloBase;
+        await window.storage.set(STORAGE_KEY, JSON.stringify(existing));
+        return;
+      }catch(e){}
+    }
+    memoryFallback = memoryFallback || {};
+    memoryFallback.poloBase = poloBase;
+  }
+  async function addManualPoloEntry(nteKey, polo){
+    const isNew = !state.poloBase.map[nteKey];
+    const newCount = state.poloBase.count + (isNew?1:0);
+    const atualizadoEm = new Date().toISOString();
+    if(fbDb){
+      try{
+        await fbDb.ref(FB_ROOT+"/basePolo/map/"+nteKey).set(polo);
+        await fbDb.ref(FB_ROOT+"/basePolo").update({ count:newCount, atualizadoEm });
+      }catch(e){ console.error(e); }
+    } else {
+      await savePoloBase({ map: Object.assign({}, state.poloBase.map, {[nteKey]:polo}), count:newCount, atualizadoEm });
+    }
+    state.poloBase = { map: Object.assign({}, state.poloBase.map, {[nteKey]:polo}), count:newCount, atualizadoEm };
+    return isNew;
+  }
+  async function removePoloEntry(nteKey){
+    if(!state.poloBase.map[nteKey]) return;
+    const newCount = Math.max(0, state.poloBase.count - 1);
+    const atualizadoEm = new Date().toISOString();
+    const updatedMap = Object.assign({}, state.poloBase.map);
+    delete updatedMap[nteKey];
+    if(fbDb){
+      try{
+        await fbDb.ref(FB_ROOT+"/basePolo/map/"+nteKey).remove();
+        await fbDb.ref(FB_ROOT+"/basePolo").update({ count:newCount, atualizadoEm });
+      }catch(e){ console.error(e); }
+    } else {
+      await savePoloBase({ map: updatedMap, count:newCount, atualizadoEm });
+    }
+    state.poloBase = { map: updatedMap, count:newCount, atualizadoEm };
+  }
+  async function parsePoloBaseFile(file){
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, {type:"array"});
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, {defval:""});
+    const map = {};
+    let count = 0;
+    for(const row of rows){
+      const keys = Object.keys(row);
+      const nteKey = keys.find(k => /^nte/i.test(k));
+      const poloKey = keys.find(k => /^polo/i.test(k));
+      if(!nteKey) continue;
+      const nte = normalizeNteKey(row[nteKey]);
+      if(!nte) continue;
+      map[nte] = poloKey ? String(row[poloKey]).trim() : "";
+      count++;
+    }
+    if(!count) throw new Error("Nenhuma linha com NTE reconhecível. Confira se a planilha tem uma coluna \"NTE\".");
+    return { map, count, atualizadoEm: new Date().toISOString() };
+  }
+
   // ---------- state ----------
   const state = {
     config: { tipoKeyword:"aposentadoria", orgaoKeywords:"SEC" },
@@ -981,12 +1103,13 @@
     currentDoDate: null,
     archivedThisSession: false,
     history: [], archived: [],
-    historyFilters: { nte:"", unidade:"", matricula:"", nome:"", cargo:"" },
-    archivedFilters: { nte:"", unidade:"", matricula:"", nome:"", cargo:"" },
+    historyFilters: { polo:"", nte:"", municipio:"", unidade:"", matricula:"", nome:"", cargo:"" },
+    archivedFilters: { polo:"", nte:"", municipio:"", unidade:"", matricula:"", nome:"", cargo:"" },
     expandedKeys: new Set(),
     historyRenderPending: false,
     archivedRenderPending: false,
-    nteBase: { map:{}, count:0, atualizadoEm:null }
+    nteBase: { map:{}, count:0, atualizadoEm:null },
+    poloBase: { map:{}, count:0, atualizadoEm:null }
   };
   function recordDedupKey(r){ return r.processo || ('mat:'+r.matricula); }
 
@@ -994,31 +1117,48 @@
     if(!matricula) return null;
     return state.nteBase.map[matricula] || null;
   }
+  function lookupPolo(nte){
+    if(!nte) return null;
+    return state.poloBase.map[normalizeNteKey(nte)] || null;
+  }
   function enrichWithNte(items){
     return items.map(it => {
       const ref = lookupReferencia(it.matricula);
+      const nte = ref && ref.nte ? ref.nte : null;
       return Object.assign({}, it, {
-        nte: ref && ref.nte ? ref.nte : null,
+        nte: nte,
+        polo: lookupPolo(nte),
         municipio: ref && ref.municipio ? ref.municipio : null,
         unidade: ref && ref.unidade ? ref.unidade : null
       });
     });
   }
-  // Preenche NTE/Município/Unidade de registros (atual + arquivado) que ficaram sem, porque a
-  // base foi carregada depois. Só toca nos campos vazios — nunca sobrescreve um valor já preenchido.
+  // Preenche Polo/NTE/Município/Unidade de registros (atual + arquivado) que ficaram sem, porque
+  // a base foi carregada ou atualizada depois. Só toca nos campos vazios — nunca sobrescreve um
+  // valor já preenchido. Polo depende do NTE, então usa o NTE recém-preenchido nesta mesma passada.
   async function backfillNteInHistory(){
     let total = 0;
     for(const bucket of ["atual","arquivado"]){
       const rows = bucket==="atual" ? state.history : state.archived;
-      const pendentes = rows.filter(r => (!r.nte || !r.municipio || !r.unidade) && lookupReferencia(r.matricula));
+      const pendentes = rows.filter(r => {
+        const needsRef = (!r.nte || !r.municipio || !r.unidade) && lookupReferencia(r.matricula);
+        const needsPolo = !r.polo && r.nte && lookupPolo(r.nte);
+        return needsRef || needsPolo;
+      });
       if(!pendentes.length) continue;
       total += pendentes.length;
       for(const r of pendentes){
         const ref = lookupReferencia(r.matricula);
         const patch = {};
-        if(!r.nte && ref.nte) patch.nte = ref.nte;
-        if(!r.municipio && ref.municipio) patch.municipio = ref.municipio;
-        if(!r.unidade && ref.unidade) patch.unidade = ref.unidade;
+        if(ref){
+          if(!r.nte && ref.nte) patch.nte = ref.nte;
+          if(!r.municipio && ref.municipio) patch.municipio = ref.municipio;
+          if(!r.unidade && ref.unidade) patch.unidade = ref.unidade;
+        }
+        if(!r.polo){
+          const polo = lookupPolo(patch.nte || r.nte);
+          if(polo) patch.polo = polo;
+        }
         if(Object.keys(patch).length) await updateInBucket(bucket, r._fbKey, patch);
       }
     }
@@ -1088,7 +1228,7 @@
         '<div class="flex flex-wrap items-start justify-between gap-2">' +
           '<div>' +
             (c.nome ? '<p class="text-sm font-semibold" style="color:var(--navy-900);">'+escapeHtml(c.nome)+'</p>' : '<p class="text-sm italic" style="color:var(--ink-400);">Nome não identificado automaticamente</p>') +
-            (c.matricula ? '<p class="text-xs f-mono mt-0.5" style="color:var(--ink-600);">matrícula '+escapeHtml(c.matricula)+(c.nte?' · NTE '+escapeHtml(c.nte):'')+(c.municipio?' · '+escapeHtml(c.municipio):'')+(c.unidade?' · '+escapeHtml(c.unidade):'')+'</p>' : '') +
+            (c.matricula ? '<p class="text-xs f-mono mt-0.5" style="color:var(--ink-600);">matrícula '+escapeHtml(c.matricula)+(c.polo?' · '+escapeHtml(c.polo):'')+(c.nte?' · NTE '+escapeHtml(c.nte):'')+(c.municipio?' · '+escapeHtml(c.municipio):'')+(c.unidade?' · '+escapeHtml(c.unidade):'')+'</p>' : '') +
           '</div>' +
           (hasBoth ? '<button class="btn-small btn-confirm-review" data-review-idx="'+idx+'"'+(c.confirmado?' disabled':'')+'>'+(c.confirmado?'Registrado ✓':'Confirmar e registrar')+'</button>' : '') +
         '</div>' +
@@ -1105,6 +1245,7 @@
   }
 
   const HISTORY_FILTER_FIELDS = [
+    { key:"polo", field:"polo" },
     { key:"nte", field:"nte" },
     { key:"municipio", field:"municipio" },
     { key:"unidade", field:"unidade" },
@@ -1135,6 +1276,7 @@
     const hasObs = it.observacoes && it.observacoes.trim();
     return (
       '<tr class="ledger-row ledger-row-sec fade-in" data-detail-target="'+prefix+'-detail-'+idx+'" data-key="'+escapeHtml(key)+'" data-bucket="'+bucket+'">' +
+        '<td class="py-2.5 pr-3">'+escapeHtml(it.polo||"—")+'</td>' +
         '<td class="py-2.5 pr-3">'+escapeHtml(it.nte||"—")+'</td>' +
         '<td class="py-2.5 pr-3 truncate-cell" title="'+escapeHtml(it.municipio||"")+'">'+escapeHtml(it.municipio||"—")+'</td>' +
         '<td class="py-2.5 pr-3 truncate-cell" title="'+escapeHtml(it.unidade||"")+'">'+escapeHtml(it.unidade||"—")+'</td>' +
@@ -1145,9 +1287,10 @@
         '<td class="py-2.5 pr-2 text-right no-print"><button class="btn-remove text-xs" data-key="'+escapeHtml(key)+'" data-bucket="'+bucket+'" style="color:var(--brick-600);" title="Remover">remover</button></td>' +
       '</tr>' +
       '<tr class="detail-row'+(isOpen?'':' hidden')+' no-print" id="'+prefix+'-detail-'+idx+'">' +
-        '<td colspan="8" class="pb-3.5 px-3 pt-1">' +
+        '<td colspan="9" class="pb-3.5 px-3 pt-1">' +
           '<label class="text-xs font-semibold block mb-1.5" style="color:var(--navy-900);">Dados de referência</label>' +
-          '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">' +
+          '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">' +
+            '<input class="filter-input detail-edit-input" data-field="polo" placeholder="Polo" value="'+escapeHtml(it.polo||"")+'">' +
             '<input class="filter-input detail-edit-input" data-field="nte" placeholder="NTE" value="'+escapeHtml(it.nte||"")+'">' +
             '<input class="filter-input detail-edit-input" data-field="municipio" placeholder="Município" value="'+escapeHtml(it.municipio||"")+'">' +
             '<input class="filter-input detail-edit-input" data-field="unidade" placeholder="Unidade" value="'+escapeHtml(it.unidade||"")+'">' +
@@ -1205,7 +1348,7 @@
       for(const dateKey of dateKeys){
         const groupRows = groups[dateKey].sort((a,b)=> (b.dataRegistro||"").localeCompare(a.dataRegistro||""));
         const label = dateKey === "__sem_data__" ? "Data não identificada" : dateKey;
-        html += '<tr class="date-group-row"><td colspan="8" class="pt-4 pb-1.5 px-1 text-xs font-semibold" style="color:var(--gold-600);">'+escapeHtml(label)+' <span class="font-normal" style="color:var(--ink-400);">— '+groupRows.length+(groupRows.length===1?' registro':' registros')+'</span></td></tr>';
+        html += '<tr class="date-group-row"><td colspan="9" class="pt-4 pb-1.5 px-1 text-xs font-semibold" style="color:var(--gold-600);">'+escapeHtml(label)+' <span class="font-normal" style="color:var(--ink-400);">— '+groupRows.length+(groupRows.length===1?' registro':' registros')+'</span></td></tr>';
         for(const it of groupRows){ html += personRowHtml(it, idx, prefix, bucket); idx++; }
       }
     }
@@ -1229,7 +1372,7 @@
     if(!rows.length) return;
     const data = rows.map(r => ({
       "Nome": r.nome || "", "Matrícula": r.matricula || "", "Processo": r.processo || "",
-      "Órgão": r.orgao || "", "NTE": r.nte || "", "Município": r.municipio || "", "Unidade": r.unidade || "", "Cargo/Detalhe": r.cargoDetalhe || "",
+      "Órgão": r.orgao || "", "Polo": r.polo || "", "NTE": r.nte || "", "Município": r.municipio || "", "Unidade": r.unidade || "", "Cargo/Detalhe": r.cargoDetalhe || "",
       "Tipo de Aposentadoria": r.tipoAto || "", "Fundamento Legal": r.fundamento || "",
       "Tipo de Proventos": r.tipoProventos || "", "Valor (R$)": r.valor || "",
       "Valor por Extenso": r.valorExtenso || "", "Nº Portaria": r.portariaNumero || "",
@@ -1237,7 +1380,7 @@
       "Observações": r.observacoes || "", "Registrado em": r.dataRegistro ? fmtDateTimeBR(r.dataRegistro) : ""
     }));
     const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [{wch:28},{wch:12},{wch:26},{wch:8},{wch:10},{wch:20},{wch:24},{wch:30},{wch:26},{wch:38},{wch:14},{wch:13},{wch:36},{wch:12},{wch:20},{wch:16},{wch:10},{wch:34},{wch:16}];
+    ws["!cols"] = [{wch:28},{wch:12},{wch:26},{wch:8},{wch:14},{wch:10},{wch:20},{wch:24},{wch:30},{wch:26},{wch:38},{wch:14},{wch:13},{wch:36},{wch:12},{wch:20},{wch:16},{wch:10},{wch:34},{wch:16}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, sheetName || "Aposentadorias");
     XLSX.writeFile(wb, filename);
@@ -1481,6 +1624,87 @@
     setTimeout(()=>msg.classList.add("hidden"), 4000);
   }
 
+  function renderPoloStatus(){
+    const el = document.getElementById("polo-status");
+    if(!state.poloBase.count){
+      el.textContent = "Nenhuma base carregada ainda — o campo Polo fica vazio até você carregar uma planilha.";
+      el.style.color = "var(--ink-400);";
+      return;
+    }
+    el.textContent = state.poloBase.count + " NTE(s) relacionado(s)" + (state.poloBase.atualizadoEm ? " · atualizado em " + fmtDateTimeBR(state.poloBase.atualizadoEm) : "");
+    el.style.color = "var(--navy-800)";
+  }
+  async function handlePoloBaseFile(file){
+    const el = document.getElementById("polo-error");
+    el.classList.add("hidden");
+    if(!file) return;
+    const ok = /\.(xlsx|xls|csv)$/i.test(file.name||"");
+    if(!ok){ el.textContent = "Formato não reconhecido. Envie um .xlsx, .xls ou .csv."; el.classList.remove("hidden"); return; }
+    try{
+      const poloBase = await parsePoloBaseFile(file);
+      state.poloBase = poloBase;
+      await savePoloBase(poloBase);
+      renderPoloStatus();
+      const preenchidos = await backfillNteInHistory();
+      if(preenchidos>0){ renderHistoryTable(); renderArchivedTable(); }
+      if(document.getElementById("input-text").value.trim()) await onProcessar();
+    }catch(err){
+      console.error(err);
+      el.textContent = err.message || "Não foi possível ler essa planilha.";
+      el.classList.remove("hidden");
+    }
+  }
+
+  function handleManualPoloLookup(){
+    const nte = normalizeNteKey(document.getElementById("manual-polo-nte").value);
+    const deleteBtn = document.getElementById("btn-manual-polo-delete");
+    const poloEl = document.getElementById("manual-polo-polo");
+    const existing = nte ? state.poloBase.map[nte] : null;
+    if(existing !== null && existing !== undefined){
+      poloEl.value = existing || "";
+      deleteBtn.classList.remove("hidden");
+    } else {
+      poloEl.value = "";
+      deleteBtn.classList.add("hidden");
+    }
+  }
+  async function handleManualPoloAdd(){
+    const nteEl = document.getElementById("manual-polo-nte");
+    const poloEl = document.getElementById("manual-polo-polo");
+    const msg = document.getElementById("manual-polo-msg");
+    const nte = normalizeNteKey(nteEl.value);
+    if(!nte){
+      msg.textContent = "Informe ao menos o NTE.";
+      msg.style.color = "var(--brick-600)";
+      msg.classList.remove("hidden");
+      return;
+    }
+    const isNew = await addManualPoloEntry(nte, poloEl.value.trim());
+    renderPoloStatus();
+    const preenchidos = await backfillNteInHistory();
+    if(preenchidos>0){ renderHistoryTable(); renderArchivedTable(); }
+    nteEl.value=""; poloEl.value="";
+    document.getElementById("btn-manual-polo-delete").classList.add("hidden");
+    msg.textContent = (isNew ? "NTE incluído." : "NTE atualizado.") + (preenchidos>0 ? " "+preenchidos+" registro(s) atualizado(s)." : "");
+    msg.style.color = "var(--navy-800)";
+    msg.classList.remove("hidden");
+    setTimeout(()=>msg.classList.add("hidden"), 4000);
+  }
+  async function handleManualPoloDelete(){
+    const nte = normalizeNteKey(document.getElementById("manual-polo-nte").value);
+    if(!nte || !(nte in state.poloBase.map)) return;
+    if(!confirm("Excluir a relação do NTE "+nte+" com Polo? Isso não afeta registros de pessoas já salvos.")) return;
+    await removePoloEntry(nte);
+    renderPoloStatus();
+    document.getElementById("manual-polo-nte").value=""; document.getElementById("manual-polo-polo").value="";
+    document.getElementById("btn-manual-polo-delete").classList.add("hidden");
+    const msg = document.getElementById("manual-polo-msg");
+    msg.textContent = "NTE "+nte+" excluído da base de Polo.";
+    msg.style.color = "var(--navy-800)";
+    msg.classList.remove("hidden");
+    setTimeout(()=>msg.classList.add("hidden"), 4000);
+  }
+
   function switchView(view){
     document.getElementById("view-producao").classList.toggle("hidden", view !== "producao");
     document.getElementById("view-arquivado").classList.toggle("hidden", view !== "arquivado");
@@ -1540,6 +1764,16 @@
     });
     nteFileInput.addEventListener("change", (e)=>{ if(e.target.files[0]) handleNteBaseFile(e.target.files[0]); nteFileInput.value = ""; });
 
+    const poloFileInput = document.getElementById("polo-file-input");
+    document.getElementById("btn-polo-upload").addEventListener("click", ()=> poloFileInput.click());
+    poloFileInput.addEventListener("change", (e)=>{ if(e.target.files[0]) handlePoloBaseFile(e.target.files[0]); poloFileInput.value = ""; });
+    document.getElementById("btn-manual-polo-add").addEventListener("click", handleManualPoloAdd);
+    document.getElementById("btn-manual-polo-delete").addEventListener("click", handleManualPoloDelete);
+    document.getElementById("manual-polo-nte").addEventListener("input", handleManualPoloLookup);
+    ["manual-polo-nte","manual-polo-polo"].forEach(id=>{
+      document.getElementById(id).addEventListener("keydown", (e)=>{ if(e.key==="Enter") handleManualPoloAdd(); });
+    });
+
     document.addEventListener("paste", (e)=>{
       const files = e.clipboardData && e.clipboardData.files;
       if(files && files.length > 0){ e.preventDefault(); handlePdfFile(files[0]); }
@@ -1586,7 +1820,7 @@
         const c = state.todayT2[idx];
         if(c && c.nome && c.matricula){
           const res = await addNewToHistory([{ nome:c.nome, matricula:c.matricula, processo:null, orgao:null,
-            cargoDetalhe:null, valor:null, tipoAto:null, fundamento:null, nte:c.nte||null, municipio:c.municipio||null, unidade:c.unidade||null,
+            cargoDetalhe:null, valor:null, tipoAto:null, fundamento:null, nte:c.nte||null, polo:c.polo||null, municipio:c.municipio||null, unidade:c.unidade||null,
             portariaNumero:c.portariaNumero||null, portariaData:c.portariaData||null, dataDO: state.currentDoDate,
             confidence:'baixa', snippet:c.snippet }]);
           renderStats(); renderHistoryTable(); pulse(document.getElementById("stat-hist-num"));
@@ -1664,6 +1898,8 @@
     document.getElementById("cfg-orgao").value = state.config.orgaoKeywords;
     state.nteBase = await loadNteBase();
     renderNteStatus();
+    state.poloBase = await loadPoloBase();
+    renderPoloStatus();
     const session = await loadSessionSnapshot();
     state.todayT1 = session.todayT1 || [];
     state.todayT2 = session.todayT2 || [];
