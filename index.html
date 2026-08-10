@@ -115,15 +115,16 @@
   .module-view.hidden{display:none;}
   .content-wrap{max-width:56rem;margin:0 auto;padding:2rem 1.5rem 4rem;}
   @media (min-width:640px){ .content-wrap{padding:2.75rem 2.5rem 4rem;} }
-  .module-header{margin-bottom:1.75rem;}
+  .module-header{margin-bottom:2rem;}
+  #sticky-top{position:sticky; top:0; z-index:20; background:var(--paper-50); padding-top:0.25rem; margin-bottom:0.75rem;}
 
   .filter-input{
     width:100%; font-size:12px; padding:4px 7px; border-radius:6px;
     border:1px solid var(--paper-border); background:var(--paper-50); color:var(--ink-900);
   }
   .sticky-head tr{position:sticky; z-index:5;}
-  .sticky-head tr:first-child{top:0;}
-  .sticky-head tr:last-child{top:32px;}
+  .sticky-head tr:first-child{top:var(--table-sticky-offset, 0px);}
+  .sticky-head tr:last-child{top:calc(var(--table-sticky-offset, 0px) + 32px);}
   .filter-input:focus{outline:2px solid var(--gold-500); outline-offset:0;}
   .filter-input::placeholder{color:var(--ink-400);}
   .truncate-cell{max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -136,12 +137,13 @@
   .print-header{display:none;}
 
   @media print{
-    body *{visibility:hidden;}
-    #pessoas-section, #pessoas-section *{visibility:visible;}
-    #pessoas-section{position:absolute; top:0; left:0; width:100%; padding:0; border:none;}
-    .no-print{display:none !important;}
+    .sidebar, footer, .no-print{display:none !important;}
+    .app-shell{display:block !important;}
+    .main-content{width:100% !important;}
+    .content-wrap{max-width:none !important; padding:0 !important;}
     .print-header{display:block !important; margin-bottom:14px;}
     .truncate-cell{max-width:none; white-space:normal;}
+    .sticky-head tr{position:static !important;}
     table{font-size:11px;}
     th, td{padding:4px 6px !important;}
     .selo-sec, .orgao-pill, .badge-revisar{border:1px solid #999 !important; background:none !important; box-shadow:none !important;}
@@ -190,14 +192,13 @@
 <div id="view-producao" class="module-view">
 <div class="content-wrap">
 
-  <div class="module-header flex items-end justify-between flex-wrap gap-2">
+<div id="sticky-top">
+  <div class="module-header flex items-end justify-between flex-wrap gap-2 no-print">
     <div>
       <h1 class="f-display text-2xl" style="color:var(--navy-900);">Produção</h1>
       <p class="text-sm mt-0.5" style="color:var(--ink-600);">Resultados das buscas realizadas</p>
     </div>
   </div>
-
-  <div class="space-y-3">
 
   <!-- DASHBOARD -->
   <p id="process-msg" class="text-sm hidden"></p>
@@ -219,6 +220,9 @@
       <p class="stat-num text-2xl mt-0.5" style="color:var(--navy-900);" id="stat-hist-num">0</p>
     </button>
   </section>
+</div>
+
+  <div class="space-y-3">
 
   <!-- TIER 2: REVISAR (só aparece quando há pendências) -->
   <section id="review-section" class="hidden">
@@ -422,6 +426,18 @@
       <span id="nte-status" class="text-xs" style="color:var(--ink-400);">Nenhuma base carregada ainda — os registros ficam sem NTE/Unidade até você carregar uma planilha.</span>
     </div>
     <p id="nte-error" class="text-sm mt-2.5 hidden" style="color:var(--brick-600);"></p>
+
+    <div class="mt-4 pt-4" style="border-top:1px solid var(--paper-border);">
+      <p class="text-xs font-semibold mb-2.5" style="color:var(--navy-900);">Ou inclua um registro manualmente</p>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <input id="manual-nte-matricula" type="text" placeholder="Matrícula" class="filter-input" style="padding:7px 9px;">
+        <input id="manual-nte-nome" type="text" placeholder="Nome" class="filter-input" style="padding:7px 9px;">
+        <input id="manual-nte-nte" type="text" placeholder="NTE" class="filter-input" style="padding:7px 9px;">
+        <input id="manual-nte-unidade" type="text" placeholder="Unidade" class="filter-input" style="padding:7px 9px;">
+      </div>
+      <button id="btn-manual-nte-add" class="btn-gold rounded-lg px-4 py-2 text-sm mt-2.5">Incluir</button>
+      <p id="manual-nte-msg" class="text-xs mt-2 hidden"></p>
+    </div>
   </section>
 
   <section class="paper-card p-5 sm:p-6">
@@ -843,6 +859,23 @@
     memoryFallback = memoryFallback || {};
     memoryFallback.nteBase = nteBase;
   }
+  // Inclusão manual de uma única matrícula: grava só esse nó (não reescreve a base inteira,
+  // que pode ter dezenas de milhares de linhas vindas da planilha). Retorna se era nova.
+  async function addManualNteEntry(matricula, entry){
+    const isNew = !state.nteBase.map[matricula];
+    const newCount = state.nteBase.count + (isNew?1:0);
+    const atualizadoEm = new Date().toISOString();
+    if(fbDb){
+      try{
+        await fbDb.ref(FB_ROOT+"/baseNTE/map/"+matricula).set(entry);
+        await fbDb.ref(FB_ROOT+"/baseNTE").update({ count:newCount, atualizadoEm });
+      }catch(e){ console.error(e); }
+    } else {
+      await saveNteBase({ map: Object.assign({}, state.nteBase.map, {[matricula]:entry}), count:newCount, atualizadoEm });
+    }
+    state.nteBase = { map: Object.assign({}, state.nteBase.map, {[matricula]:entry}), count:newCount, atualizadoEm };
+    return isNew;
+  }
   async function parseNteBaseFile(file){
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, {type:"array"});
@@ -972,6 +1005,16 @@
     document.getElementById("history-count-label").textContent = state.history.length + (state.history.length===1?" registro":" registros");
     const archLabel = document.getElementById("archived-count-label");
     if(archLabel) archLabel.textContent = state.archived.length + (state.archived.length===1?" registro":" registros");
+    updateStickyOffset();
+  }
+  // O painel (título+dashboard) e o cabeçalho da tabela de Pessoas congelam juntos. A variável é
+  // aplicada só dentro de #view-producao, então a tabela de Arquivado (sem esse painel acima)
+  // continua colando no topo (0px) normalmente.
+  function updateStickyOffset(){
+    const el = document.getElementById("sticky-top");
+    const scope = document.getElementById("view-producao");
+    if(!el || !scope) return;
+    scope.style.setProperty("--table-sticky-offset", el.offsetHeight + "px");
   }
   function pulse(el){ el.classList.remove("pulse-once"); void el.offsetWidth; el.classList.add("pulse-once"); }
 
@@ -1244,7 +1287,7 @@
       await saveNteBase(nteBase);
       renderNteStatus();
       const preenchidos = await backfillNteInHistory();
-      if(preenchidos>0){ renderHistoryTable(); }
+      if(preenchidos>0){ renderHistoryTable(); renderArchivedTable(); }
       // Reprocessa a colagem atual, se houver, para já refletir o NTE nos resultados na tela.
       if(document.getElementById("input-text").value.trim()) await onProcessar();
     }catch(err){
@@ -1252,6 +1295,31 @@
       el.textContent = err.message || "Não foi possível ler essa planilha.";
       el.classList.remove("hidden");
     }
+  }
+
+  async function handleManualNteAdd(){
+    const matriculaEl = document.getElementById("manual-nte-matricula");
+    const nomeEl = document.getElementById("manual-nte-nome");
+    const nteEl = document.getElementById("manual-nte-nte");
+    const unidadeEl = document.getElementById("manual-nte-unidade");
+    const msg = document.getElementById("manual-nte-msg");
+    const matricula = matriculaEl.value.trim().replace(/\D/g,"");
+    if(!matricula){
+      msg.textContent = "Informe ao menos a matrícula.";
+      msg.style.color = "var(--brick-600)";
+      msg.classList.remove("hidden");
+      return;
+    }
+    const entry = { nome: nomeEl.value.trim(), nte: nteEl.value.trim(), unidade: unidadeEl.value.trim() };
+    const isNew = await addManualNteEntry(matricula, entry);
+    renderNteStatus();
+    const preenchidos = await backfillNteInHistory();
+    if(preenchidos>0){ renderHistoryTable(); renderArchivedTable(); }
+    matriculaEl.value=""; nomeEl.value=""; nteEl.value=""; unidadeEl.value="";
+    msg.textContent = (isNew ? "Matrícula incluída." : "Matrícula atualizada.") + (preenchidos>0 ? " "+preenchidos+" registro(s) atualizado(s)." : "");
+    msg.style.color = "var(--navy-800)";
+    msg.classList.remove("hidden");
+    setTimeout(()=>msg.classList.add("hidden"), 4000);
   }
 
   function switchView(view){
@@ -1291,6 +1359,10 @@
 
     const nteFileInput = document.getElementById("nte-file-input");
     document.getElementById("btn-nte-upload").addEventListener("click", ()=> nteFileInput.click());
+    document.getElementById("btn-manual-nte-add").addEventListener("click", handleManualNteAdd);
+    ["manual-nte-matricula","manual-nte-nome","manual-nte-nte","manual-nte-unidade"].forEach(id=>{
+      document.getElementById(id).addEventListener("keydown", (e)=>{ if(e.key==="Enter") handleManualNteAdd(); });
+    });
     nteFileInput.addEventListener("change", (e)=>{ if(e.target.files[0]) handleNteBaseFile(e.target.files[0]); nteFileInput.value = ""; });
 
     document.addEventListener("paste", (e)=>{
@@ -1404,6 +1476,7 @@
     renderNteStatus();
     renderStats();
     wireEvents();
+    window.addEventListener("resize", updateStickyOffset);
     subscribeBucket("atual", onHistoryChanged);
     subscribeBucket("arquivado", onArchivedChanged);
   }
