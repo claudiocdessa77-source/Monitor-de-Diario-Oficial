@@ -217,6 +217,7 @@
               <th class="py-2 pr-3 font-medium">Processo</th>
               <th class="py-2 pr-3 font-medium">Cargo</th>
               <th class="py-2 pr-3 font-medium">NTE</th>
+              <th class="py-2 pr-3 font-medium">Unidade</th>
               <th class="py-2 pr-3 font-medium">Valor</th>
               <th class="py-2 pr-3 font-medium">Confiança</th>
               <th class="py-2 pr-3 font-medium">Registrado em</th>
@@ -310,12 +311,12 @@
 
   <!-- BASE NTE -->
   <section class="paper-card p-5 sm:p-6">
-    <h2 class="f-display text-lg mb-1" style="color:var(--navy-900);">Base de matrículas × NTE</h2>
-    <p class="text-xs mb-3" style="color:var(--ink-400);">Planilha (.xlsx ou .csv) com as colunas Matrícula, Nome e NTE. Usada para preencher o NTE nos registros automaticamente. Recarregar substitui a base inteira.</p>
+    <h2 class="f-display text-lg mb-1" style="color:var(--navy-900);">Base de matrículas × NTE/Unidade</h2>
+    <p class="text-xs mb-3" style="color:var(--ink-400);">Planilha (.xlsx ou .csv) com as colunas Matrícula, Nome, NTE e Unidade. Usada para preencher esses campos nos registros automaticamente. Recarregar substitui a base inteira; registros já salvos são atualizados, sem perder o resto dos dados.</p>
     <div class="flex flex-wrap items-center gap-3">
       <button id="btn-nte-upload" class="btn-ghost rounded-lg px-4 py-2 text-sm">Carregar planilha</button>
       <input id="nte-file-input" type="file" accept=".xlsx,.xls,.csv" class="hidden">
-      <span id="nte-status" class="text-xs" style="color:var(--ink-400);">Nenhuma base carregada ainda — os registros ficam sem o campo NTE até você carregar uma planilha.</span>
+      <span id="nte-status" class="text-xs" style="color:var(--ink-400);">Nenhuma base carregada ainda — os registros ficam sem NTE/Unidade até você carregar uma planilha.</span>
     </div>
     <p id="nte-error" class="text-sm mt-2.5 hidden" style="color:var(--brick-600);"></p>
   </section>
@@ -687,10 +688,15 @@
       const matKey = keys.find(k => /matr[ií]cula/i.test(k));
       const nomeKey = keys.find(k => /^nome/i.test(k));
       const nteKey = keys.find(k => /^nte/i.test(k));
+      const unidadeKey = keys.find(k => /unidade/i.test(k) || /lota[cç][aã]o/i.test(k));
       if(!matKey) continue;
       const matricula = String(row[matKey]).trim().replace(/\D/g,"");
       if(!matricula) continue;
-      map[matricula] = { nome: nomeKey ? String(row[nomeKey]).trim() : "", nte: nteKey ? String(row[nteKey]).trim() : "" };
+      map[matricula] = {
+        nome: nomeKey ? String(row[nomeKey]).trim() : "",
+        nte: nteKey ? String(row[nteKey]).trim() : "",
+        unidade: unidadeKey ? String(row[unidadeKey]).trim() : ""
+      };
       count++;
     }
     if(!count) throw new Error("Nenhuma linha com matrícula reconhecível. Confira se a planilha tem uma coluna \"Matrícula\".");
@@ -705,27 +711,44 @@
     nteBase: { map:{}, count:0, atualizadoEm:null }
   };
 
-  function lookupNte(matricula){
+  function lookupReferencia(matricula){
     if(!matricula) return null;
-    const entry = state.nteBase.map[matricula];
-    return entry ? (entry.nte || null) : null;
+    return state.nteBase.map[matricula] || null;
   }
   function enrichWithNte(items){
-    return items.map(it => Object.assign({}, it, { nte: lookupNte(it.matricula) }));
+    return items.map(it => {
+      const ref = lookupReferencia(it.matricula);
+      return Object.assign({}, it, {
+        nte: ref && ref.nte ? ref.nte : null,
+        unidade: ref && ref.unidade ? ref.unidade : null
+      });
+    });
   }
-  // Preenche o NTE de registros do histórico que ficaram sem, porque a base foi carregada depois
-  // (ou atualizada). Nunca sobrescreve um NTE já preenchido.
+  // Preenche NTE/Unidade de registros do histórico que ficaram sem, porque a base foi carregada
+  // depois (ou atualizada). Só toca nos campos que estão vazios — nunca sobrescreve um valor já
+  // preenchido, e nenhum outro campo do registro é alterado.
   async function backfillNteInHistory(){
-    const pendentes = state.history.filter(r => !r.nte && lookupNte(r.matricula));
+    const pendentes = state.history.filter(r => (!r.nte || !r.unidade) && lookupReferencia(r.matricula));
     if(!pendentes.length) return 0;
     for(const r of pendentes){
-      const nte = lookupNte(r.matricula);
+      const ref = lookupReferencia(r.matricula);
+      const patch = {};
+      if(!r.nte && ref.nte) patch.nte = ref.nte;
+      if(!r.unidade && ref.unidade) patch.unidade = ref.unidade;
+      if(!Object.keys(patch).length) continue;
       if(fbDb && r._fbKey && !String(r._fbKey).startsWith('local_')){
-        try{ await fbDb.ref(FB_ROOT+"/historico/"+r._fbKey+"/nte").set(nte); }catch(e){ console.error(e); }
+        try{ await fbDb.ref(FB_ROOT+"/historico/"+r._fbKey).update(patch); }catch(e){ console.error(e); }
       }
     }
     if(!fbDb){
-      const updated = state.history.map(r => (!r.nte && lookupNte(r.matricula)) ? Object.assign({}, r, {nte: lookupNte(r.matricula)}) : r);
+      const updated = state.history.map(r => {
+        const ref = lookupReferencia(r.matricula);
+        if(!ref) return r;
+        const patch = {};
+        if(!r.nte && ref.nte) patch.nte = ref.nte;
+        if(!r.unidade && ref.unidade) patch.unidade = ref.unidade;
+        return Object.keys(patch).length ? Object.assign({}, r, patch) : r;
+      });
       await persistHistoryArrayFallback(updated);
     }
     return pendentes.length;
@@ -767,7 +790,7 @@
         '<div class="flex flex-wrap items-start justify-between gap-2">' +
           '<div>' +
             (c.nome ? '<p class="text-sm font-semibold" style="color:var(--navy-900);">'+escapeHtml(c.nome)+'</p>' : '<p class="text-sm italic" style="color:var(--ink-400);">Nome não identificado automaticamente</p>') +
-            (c.matricula ? '<p class="text-xs f-mono mt-0.5" style="color:var(--ink-600);">matrícula '+escapeHtml(c.matricula)+(c.nte?' · NTE '+escapeHtml(c.nte):'')+'</p>' : '') +
+            (c.matricula ? '<p class="text-xs f-mono mt-0.5" style="color:var(--ink-600);">matrícula '+escapeHtml(c.matricula)+(c.nte?' · NTE '+escapeHtml(c.nte):'')+(c.unidade?' · '+escapeHtml(c.unidade):'')+'</p>' : '') +
           '</div>' +
           (hasBoth ? '<button class="btn-small btn-confirm-review" data-review-idx="'+idx+'">Confirmar e registrar</button>' : '') +
         '</div>' +
@@ -813,7 +836,7 @@
     for(const dateKey of dateKeys){
       const groupRows = groups[dateKey].sort((a,b)=> (b.dataRegistro||"").localeCompare(a.dataRegistro||""));
       const label = dateKey === "__sem_data__" ? "Data não identificada" : dateKey;
-      html += '<tr class="date-group-row"><td colspan="9" class="pt-4 pb-1.5 px-1 text-xs font-semibold" style="color:var(--gold-600);">'+escapeHtml(label)+' <span class="font-normal" style="color:var(--ink-400);">— '+groupRows.length+(groupRows.length===1?' registro':' registros')+'</span></td></tr>';
+      html += '<tr class="date-group-row"><td colspan="10" class="pt-4 pb-1.5 px-1 text-xs font-semibold" style="color:var(--gold-600);">'+escapeHtml(label)+' <span class="font-normal" style="color:var(--ink-400);">— '+groupRows.length+(groupRows.length===1?' registro':' registros')+'</span></td></tr>';
       for(const it of groupRows){
         const key = it._fbKey || it.processo || ('mat:'+it.matricula);
         const confBadge = it.confidence === 'baixa'
@@ -826,13 +849,14 @@
             '<td class="py-2.5 pr-3 f-mono text-xs">'+escapeHtml(it.processo||"—")+'</td>' +
             '<td class="py-2.5 pr-3">'+escapeHtml(it.cargoDetalhe||"—")+'</td>' +
             '<td class="py-2.5 pr-3">'+escapeHtml(it.nte||"—")+'</td>' +
+            '<td class="py-2.5 pr-3">'+escapeHtml(it.unidade||"—")+'</td>' +
             '<td class="py-2.5 pr-3 f-mono">'+(it.valor?('R$ '+escapeHtml(it.valor)):"—")+'</td>' +
             '<td class="py-2.5 pr-3">'+confBadge+'</td>' +
             '<td class="py-2.5 pr-3 text-xs">'+fmtDateTimeBR(it.dataRegistro)+'</td>' +
             '<td class="py-2.5 pr-2 text-right"><button class="btn-remove text-xs" data-key="'+escapeHtml(key)+'" style="color:var(--brick-600);" title="Remover do histórico">remover</button></td>' +
           '</tr>' +
           '<tr class="detail-row hidden" id="hist-detail-'+idx+'">' +
-            '<td colspan="9" class="pb-3 px-3 text-xs" style="color:var(--ink-600);">' +
+            '<td colspan="10" class="pb-3 px-3 text-xs" style="color:var(--ink-600);">' +
               (it.tipoAto ? '<span class="font-semibold">'+escapeHtml(it.tipoAto)+'</span><br>' : '') +
               (it.fundamento ? 'Fundamento: '+escapeHtml(it.fundamento)+'<br>' : '') +
               (it.snippet ? 'Trecho: …'+escapeHtml(it.snippet)+'…' : '') +
@@ -850,7 +874,7 @@
     if(!rows.length) return;
     const data = rows.map(r => ({
       "Nome": r.nome || "", "Matrícula": r.matricula || "", "Processo": r.processo || "",
-      "Órgão": r.orgao || "", "NTE": r.nte || "", "Cargo/Detalhe": r.cargoDetalhe || "",
+      "Órgão": r.orgao || "", "NTE": r.nte || "", "Unidade": r.unidade || "", "Cargo/Detalhe": r.cargoDetalhe || "",
       "Tipo de Aposentadoria": r.tipoAto || "", "Fundamento Legal": r.fundamento || "",
       "Tipo de Proventos": r.tipoProventos || "", "Valor (R$)": r.valor || "",
       "Valor por Extenso": r.valorExtenso || "", "Nº Portaria": r.portariaNumero || "",
@@ -858,7 +882,7 @@
       "Registrado em": r.dataRegistro ? fmtDateTimeBR(r.dataRegistro) : ""
     }));
     const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [{wch:28},{wch:12},{wch:26},{wch:8},{wch:10},{wch:30},{wch:26},{wch:38},{wch:14},{wch:13},{wch:36},{wch:12},{wch:20},{wch:10},{wch:16}];
+    ws["!cols"] = [{wch:28},{wch:12},{wch:26},{wch:8},{wch:10},{wch:24},{wch:30},{wch:26},{wch:38},{wch:14},{wch:13},{wch:36},{wch:12},{wch:20},{wch:10},{wch:16}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, sheetName || "Aposentadorias");
     XLSX.writeFile(wb, filename);
@@ -1052,7 +1076,7 @@
         const c = state.todayT2[idx];
         if(c && c.nome && c.matricula){
           const res = await addNewToHistory([{ nome:c.nome, matricula:c.matricula, processo:null, orgao:null,
-            cargoDetalhe:null, valor:null, tipoAto:null, fundamento:null, nte:c.nte||null,
+            cargoDetalhe:null, valor:null, tipoAto:null, fundamento:null, nte:c.nte||null, unidade:c.unidade||null,
             portariaNumero:c.portariaNumero||null, portariaData:c.portariaData||null,
             confidence:'baixa', snippet:c.snippet }]);
           renderStats(); renderHistoryTable(); pulse(document.getElementById("stat-hist-num"));
