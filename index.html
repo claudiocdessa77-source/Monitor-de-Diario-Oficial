@@ -134,6 +134,18 @@
     border:1px solid var(--paper-border); background:#fff; color:var(--ink-900); resize:vertical;
   }
   .obs-textarea:focus{outline:2px solid var(--gold-500); outline-offset:0;}
+  .nte-suggestions{
+    position:absolute; top:calc(100% + 2px); left:0; right:0; z-index:30;
+    background:#fff; border:1px solid var(--paper-border); border-radius:8px;
+    max-height:240px; overflow-y:auto; box-shadow:0 6px 18px rgba(10,24,48,.14);
+  }
+  .nte-suggestion-item{
+    display:block; width:100%; text-align:left; padding:7px 10px;
+    border-bottom:1px solid var(--paper-border); cursor:pointer;
+  }
+  .nte-suggestion-item:last-child{border-bottom:none;}
+  .nte-suggestion-item:hover{background:var(--paper-100);}
+  .nte-suggestions-note{padding:6px 10px; font-size:11px; color:var(--ink-400); border-top:1px solid var(--paper-border);}
   .print-header{display:none;}
 
   @media print{
@@ -436,7 +448,10 @@
       <p class="text-xs mb-2.5" style="color:var(--ink-400);">Digite a matrícula: se ela já existir na base, os outros campos preenchem sozinhos para você corrigir.</p>
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
         <input id="manual-nte-matricula" type="text" placeholder="Matrícula" class="filter-input" style="padding:7px 9px;">
-        <input id="manual-nte-nome" type="text" placeholder="Nome" class="filter-input" style="padding:7px 9px;">
+        <div class="relative">
+          <input id="manual-nte-nome" type="text" placeholder="Nome" class="filter-input" style="padding:7px 9px;" autocomplete="off">
+          <div id="manual-nte-nome-suggestions" class="nte-suggestions hidden"></div>
+        </div>
         <input id="manual-nte-nte" type="text" placeholder="NTE" class="filter-input" style="padding:7px 9px;">
         <input id="manual-nte-municipio" type="text" placeholder="Município" class="filter-input" style="padding:7px 9px;">
         <input id="manual-nte-unidade" type="text" placeholder="Unidade" class="filter-input" style="padding:7px 9px;">
@@ -1370,6 +1385,7 @@
     if(preenchidos>0){ renderHistoryTable(); renderArchivedTable(); }
     matriculaEl.value=""; nomeEl.value=""; nteEl.value=""; municipioEl.value=""; unidadeEl.value="";
     document.getElementById("btn-manual-nte-delete").classList.add("hidden");
+    document.getElementById("manual-nte-nome-suggestions").classList.add("hidden");
     msg.textContent = (isNew ? "Matrícula incluída." : "Matrícula atualizada.") + (preenchidos>0 ? " "+preenchidos+" registro(s) atualizado(s)." : "");
     msg.style.color = "var(--navy-800)";
     msg.classList.remove("hidden");
@@ -1394,6 +1410,48 @@
     }
   }
 
+  // Busca por nome (a base é indexada por matrícula, então isso varre os valores). Só busca a
+  // partir de 3 letras e limita os resultados mostrados, para ficar leve com dezenas de milhares
+  // de registros.
+  const NTE_NAME_SEARCH_LIMIT = 10;
+  function searchNteBaseByName(query){
+    const q = query.trim().toLowerCase();
+    if(q.length < 3) return { results: [], truncated: false };
+    const results = [];
+    let matchCount = 0;
+    for(const matricula in state.nteBase.map){
+      const entry = state.nteBase.map[matricula];
+      if(entry.nome && entry.nome.toLowerCase().includes(q)){
+        matchCount++;
+        if(results.length < NTE_NAME_SEARCH_LIMIT) results.push(Object.assign({matricula}, entry));
+      }
+    }
+    return { results, truncated: matchCount > results.length };
+  }
+  function renderNteNameSuggestions(query){
+    const box = document.getElementById("manual-nte-nome-suggestions");
+    const { results, truncated } = searchNteBaseByName(query);
+    if(!results.length){ box.classList.add("hidden"); box.innerHTML = ""; return; }
+    box.innerHTML = results.map(r =>
+      '<button type="button" class="nte-suggestion-item" data-matricula="'+escapeHtml(r.matricula)+'">' +
+        '<span class="block text-sm" style="color:var(--navy-900);">'+escapeHtml(r.nome)+'</span>' +
+        '<span class="block text-xs f-mono" style="color:var(--ink-400);">matrícula '+escapeHtml(r.matricula)+(r.nte?' · '+escapeHtml(r.nte):'')+(r.unidade?' · '+escapeHtml(r.unidade):'')+'</span>' +
+      '</button>'
+    ).join("") + (truncated ? '<div class="nte-suggestions-note">mais resultados — refine a busca</div>' : "");
+    box.classList.remove("hidden");
+  }
+  let nteNameSearchTimer = null;
+  function handleManualNteNomeInput(e){
+    clearTimeout(nteNameSearchTimer);
+    const query = e.target.value;
+    nteNameSearchTimer = setTimeout(()=> renderNteNameSuggestions(query), 150);
+  }
+  function selectNteNameSuggestion(matricula){
+    document.getElementById("manual-nte-matricula").value = matricula;
+    handleManualNteLookup();
+    document.getElementById("manual-nte-nome-suggestions").classList.add("hidden");
+  }
+
   async function handleManualNteDelete(){
     const matriculaEl = document.getElementById("manual-nte-matricula");
     const matricula = matriculaEl.value.trim().replace(/\D/g,"");
@@ -1403,6 +1461,7 @@
     renderNteStatus();
     ["manual-nte-matricula","manual-nte-nome","manual-nte-nte","manual-nte-municipio","manual-nte-unidade"].forEach(id=> document.getElementById(id).value="");
     document.getElementById("btn-manual-nte-delete").classList.add("hidden");
+    document.getElementById("manual-nte-nome-suggestions").classList.add("hidden");
     const msg = document.getElementById("manual-nte-msg");
     msg.textContent = "Matrícula "+matricula+" excluída da base.";
     msg.style.color = "var(--navy-800)";
@@ -1450,6 +1509,20 @@
     document.getElementById("btn-manual-nte-add").addEventListener("click", handleManualNteAdd);
     document.getElementById("btn-manual-nte-delete").addEventListener("click", handleManualNteDelete);
     document.getElementById("manual-nte-matricula").addEventListener("input", handleManualNteLookup);
+    document.getElementById("manual-nte-nome").addEventListener("input", handleManualNteNomeInput);
+    document.getElementById("manual-nte-nome-suggestions").addEventListener("click", (e)=>{
+      const btn = e.target.closest(".nte-suggestion-item");
+      if(btn) selectNteNameSuggestion(btn.getAttribute("data-matricula"));
+    });
+    document.getElementById("manual-nte-nome").addEventListener("keydown", (e)=>{
+      if(e.key === "Escape") document.getElementById("manual-nte-nome-suggestions").classList.add("hidden");
+    });
+    document.addEventListener("click", (e)=>{
+      const box = document.getElementById("manual-nte-nome-suggestions");
+      if(!box.classList.contains("hidden") && !box.contains(e.target) && e.target.id !== "manual-nte-nome"){
+        box.classList.add("hidden");
+      }
+    });
     ["manual-nte-matricula","manual-nte-nome","manual-nte-nte","manual-nte-municipio","manual-nte-unidade"].forEach(id=>{
       document.getElementById(id).addEventListener("keydown", (e)=>{ if(e.key==="Enter") handleManualNteAdd(); });
     });
