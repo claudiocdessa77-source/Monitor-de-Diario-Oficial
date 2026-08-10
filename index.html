@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor de Aposentadorias SEC — Diário Oficial BA</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
+<style>
+  :root{
+    --navy-950:#0A1830;
+    --navy-900:#0F2340;
+    --navy-800:#163254;
+    --navy-700:#204368;
+    --gold-600:#A87F2E;
+    --gold-500:#C29A4B;
+    --gold-300:#E3C888;
+    --gold-100:#F3E7C9;
+    --paper-50:#FBF9F3;
+    --paper-100:#F3EEDF;
+    --paper-border:#E2D8BC;
+    --ink-900:#1B2733;
+    --ink-600:#52606D;
+    --ink-400:#95A0AA;
+    --brick-600:#B3452F;
+    --brick-100:#F7E7E1;
+    --amber-600:#B8781F;
+    --amber-100:#F7EAD2;
+    --amber-border:#E8C989;
+  }
+  *{box-sizing:border-box}
+  body{
+    background:var(--paper-50);
+    color:var(--ink-900);
+    font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;
+  }
+  .f-display{font-family:'Source Serif 4',Georgia,serif;}
+  .f-mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;}
+  .paper-card{background:#fff;border:1px solid var(--paper-border);border-radius:10px;}
+  .btn-gold{background:var(--gold-500);color:var(--navy-950);font-weight:600;transition:background .15s ease, transform .1s ease;}
+  .btn-gold:hover{background:var(--gold-600);}
+  .btn-gold:active{transform:translateY(1px);}
+  .btn-gold:disabled{background:var(--paper-border);color:var(--ink-400);cursor:not-allowed;}
+  .btn-ghost{background:transparent;border:1px solid var(--paper-border);color:var(--ink-600);transition:background .15s ease, border-color .15s ease;}
+  .btn-ghost:hover{background:var(--paper-100);border-color:var(--gold-500);}
+  .btn-ghost:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-small{background:var(--navy-900);color:#fff;font-weight:600;font-size:12px;padding:4px 11px;border-radius:6px;transition:background .15s ease;}
+  .btn-small:hover{background:var(--navy-800);}
+  .stat-card{background:#fff;border:1px solid var(--paper-border);border-radius:10px;text-align:left;transition:box-shadow .15s ease, border-color .15s ease, transform .1s ease;cursor:pointer;}
+  .stat-card:hover{border-color:var(--gold-500);box-shadow:0 2px 10px rgba(10,24,48,.08);}
+  .stat-card:active{transform:translateY(1px);}
+  .stat-card.active{border-color:var(--gold-600);box-shadow:0 0 0 2px var(--gold-300) inset;}
+  .stat-num{font-family:'Source Serif 4',Georgia,serif;font-weight:700;}
+  .pulse-once{animation:pulseOnce .5s ease;}
+  @keyframes pulseOnce{0%{transform:scale(1)}30%{transform:scale(1.08);color:var(--gold-600)}100%{transform:scale(1)}}
+  .selo-sec{display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--navy-800);border-radius:999px;padding:1px 10px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;letter-spacing:.06em;color:var(--navy-800);background:var(--gold-300);box-shadow:inset 0 0 0 1px var(--gold-500);transform:rotate(-2.5deg);white-space:nowrap;}
+  .orgao-pill{display:inline-flex;align-items:center;border-radius:999px;padding:1px 9px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--ink-400);background:var(--paper-100);border:1px solid var(--paper-border);}
+  .ledger-row-sec{background:linear-gradient(90deg, var(--gold-100) 0%, rgba(255,255,255,0) 14%);}
+  .ledger-row-sec td:first-child{border-left:3px solid var(--gold-500);}
+  .ledger-row-other{color:var(--ink-400);}
+  .ledger-row-other td:first-child{border-left:3px solid transparent;}
+  tbody tr.ledger-row{cursor:pointer;transition:background .1s ease;}
+  tbody tr.ledger-row:hover{background:var(--paper-100);}
+  .detail-row{background:var(--paper-50);}
+  .fade-in{animation:fadeIn .35s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+  .scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  textarea:focus, input:focus, button:focus-visible{outline:2px solid var(--gold-500);outline-offset:1px;}
+  ::selection{background:var(--gold-300);}
+  .chev{transition:transform .2s ease;}
+  .chev.open{transform:rotate(90deg);}
+  .dropzone{border:2px dashed var(--paper-border);border-radius:12px;transition:border-color .15s ease, background .15s ease;background:var(--paper-50);}
+  .dropzone.drag{border-color:var(--gold-500);background:var(--gold-100);}
+  .progress-track{background:var(--paper-100);border-radius:999px;height:6px;overflow:hidden;}
+  .progress-fill{background:var(--gold-500);height:100%;transition:width .2s ease;}
+  .review-card{border:1px dashed var(--amber-border);background:var(--amber-100);border-radius:10px;}
+  .badge-revisar{display:inline-flex;align-items:center;border-radius:999px;padding:1px 9px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.05em;color:var(--amber-600);background:#fff;border:1px solid var(--amber-border);}
+  .spinner{width:14px;height:14px;border:2px solid var(--paper-border);border-top-color:var(--gold-500);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body class="min-h-screen pb-16">
+
+<!-- MASTHEAD -->
+<header style="background:linear-gradient(180deg, var(--navy-950), var(--navy-900));" class="text-white">
+  <div class="max-w-5xl mx-auto px-5 sm:px-8 py-6 flex items-start justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0">
+        <circle cx="22" cy="22" r="20" stroke="#C29A4B" stroke-width="1.5"/>
+        <circle cx="22" cy="22" r="15.5" stroke="#C29A4B" stroke-width="1"/>
+        <path d="M22 11 L24.6 18.6 L32.5 18.7 L26.1 23.3 L28.5 31 L22 26.2 L15.5 31 L17.9 23.3 L11.5 18.7 L19.4 18.6 Z" fill="#C29A4B"/>
+      </svg>
+      <div>
+        <h1 class="f-display text-2xl sm:text-3xl leading-tight" style="color:#F3E7C9;">Monitor de Aposentadorias</h1>
+        <p class="text-sm mt-0.5" style="color:#9FB3CC;">CPM / CEEPLT · Secretaria da Educação do Estado da Bahia</p>
+      </div>
+    </div>
+    <div class="text-right hidden sm:block shrink-0">
+      <p class="text-xs" style="color:#7C93AF;">Leitura via PDF</p>
+      <p class="f-mono text-sm" style="color:#C29A4B;" id="today-date"></p>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-5 sm:px-8 mt-6 space-y-6">
+
+  <p class="text-sm" style="color:var(--ink-600);">
+    O DOOL bloqueia acesso automatizado <span class="f-mono text-xs">(robots.txt)</span>, então o download da edição continua manual. Envie o PDF baixado — a leitura, a busca por palavra-chave e o registro no histórico ficam por conta desta página.
+  </p>
+
+  <!-- CONFIGURAÇÃO DE BUSCA -->
+  <section class="paper-card p-5 sm:p-6">
+    <h2 class="f-display text-lg mb-1" style="color:var(--navy-900);">Configuração da busca</h2>
+    <p class="text-xs mb-3.5" style="color:var(--ink-400);">O sistema procura o ato pelo tipo e depois confirma o órgão. Ajuste se precisar monitorar outra sigla.</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+      <div>
+        <label for="cfg-tipo" class="block text-xs font-semibold mb-1" style="color:var(--navy-900);">Palavra-chave do ato</label>
+        <input id="cfg-tipo" type="text" value="aposentadoria" class="w-full rounded-lg px-3 py-2 text-sm" style="border:1px solid var(--paper-border);">
+        <p class="text-xs mt-1" style="color:var(--ink-400);">separe múltiplas palavras por vírgula ou ponto e vírgula</p>
+      </div>
+      <div>
+        <label for="cfg-orgao" class="block text-xs font-semibold mb-1" style="color:var(--navy-900);">Sigla(s) do órgão</label>
+        <input id="cfg-orgao" type="text" value="SEC" class="w-full rounded-lg px-3 py-2 text-sm f-mono" style="border:1px solid var(--paper-border);">
+        <p class="text-xs mt-1" style="color:var(--ink-400);">separe múltiplas siglas por vírgula ou ponto e vírgula</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FONTE: PDF -->
+  <section class="paper-card p-5 sm:p-6">
+    <h2 class="f-display text-lg mb-1" style="color:var(--navy-900);">Edição do Diário Oficial</h2>
+    <p class="text-xs mb-3" style="color:var(--ink-400);">Baixe o PDF da edição no DOOL e solte, selecione ou cole (Ctrl+V) o arquivo abaixo.</p>
+
+    <div id="dropzone" class="dropzone p-6 sm:p-8 text-center cursor-pointer" tabindex="0" role="button" aria-label="Selecionar PDF">
+      <input id="file-input" type="file" accept="application/pdf,.pdf" class="hidden">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" class="mx-auto mb-2" style="color:var(--gold-600);">
+        <path d="M14 3v14m0 0-5-5m5 5 5-5M5 20v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <p class="text-sm font-medium" style="color:var(--navy-900);">Arraste o PDF aqui, clique para selecionar ou cole com Ctrl+V</p>
+      <p class="text-xs mt-1" style="color:var(--ink-400);">Somente arquivos .pdf</p>
+    </div>
+
+    <div id="pdf-status" class="mt-3 hidden">
+      <div class="flex items-center gap-2 text-sm" style="color:var(--navy-800);">
+        <span id="pdf-status-spinner" class="spinner"></span>
+        <span id="pdf-status-text">Extraindo texto…</span>
+      </div>
+      <div class="progress-track mt-2">
+        <div id="pdf-progress-fill" class="progress-fill" style="width:0%;"></div>
+      </div>
+    </div>
+    <p id="pdf-error" class="text-sm mt-3 hidden" style="color:var(--brick-600);"></p>
+
+    <details class="mt-4">
+      <summary class="text-xs cursor-pointer select-none" style="color:var(--ink-400);">Texto extraído (clique para revisar ou colar manualmente)</summary>
+      <textarea id="input-text" rows="7" class="w-full rounded-lg p-3 text-sm f-mono resize-y mt-2" style="border:1px solid var(--paper-border); background:var(--paper-50); color:var(--ink-900);" placeholder="O texto extraído do PDF aparece aqui — também pode colar manualmente."></textarea>
+    </details>
+
+    <div class="flex flex-wrap items-center gap-2.5 mt-3.5">
+      <button id="btn-processar" class="btn-gold rounded-lg px-4 py-2 text-sm">Processar</button>
+      <button id="btn-limpar" class="btn-ghost rounded-lg px-4 py-2 text-sm">Limpar</button>
+      <button id="btn-exemplo" class="btn-ghost rounded-lg px-4 py-2 text-sm">Carregar exemplo</button>
+      <a href="https://dool.egba.ba.gov.br/" target="_blank" rel="noopener" class="btn-ghost rounded-lg px-4 py-2 text-sm inline-flex items-center gap-1.5">
+        Abrir DOOL
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3.5 8.5L8.5 3.5M8.5 3.5H4.5M8.5 3.5V7.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+    <p id="process-msg" class="text-sm mt-3 hidden"></p>
+  </section>
+
+  <!-- STATS -->
+  <section class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <button id="stat-total" class="stat-card p-4">
+      <p class="text-xs" style="color:var(--ink-400);">Itens confirmados</p>
+      <p class="stat-num text-3xl mt-1" style="color:var(--navy-900);" id="stat-total-num">—</p>
+    </button>
+    <button id="stat-sec" class="stat-card p-4">
+      <p class="text-xs" style="color:var(--ink-400);">Confirmados no órgão</p>
+      <p class="stat-num text-3xl mt-1" style="color:var(--gold-600);" id="stat-sec-num">—</p>
+    </button>
+    <button id="stat-review" class="stat-card p-4">
+      <p class="text-xs" style="color:var(--ink-400);">Para revisar</p>
+      <p class="stat-num text-3xl mt-1" style="color:var(--amber-600);" id="stat-review-num">—</p>
+    </button>
+    <button id="stat-hist" class="stat-card p-4">
+      <p class="text-xs" style="color:var(--ink-400);">Total no histórico</p>
+      <p class="stat-num text-3xl mt-1" style="color:var(--navy-900);" id="stat-hist-num">0</p>
+    </button>
+  </section>
+
+  <!-- RESULTADOS TIER 1 -->
+  <section id="results-section" class="paper-card p-5 sm:p-6 hidden">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="f-display text-lg" style="color:var(--navy-900);">Identificados automaticamente</h2>
+      <span id="results-filter-label" class="text-xs" style="color:var(--ink-400);"></span>
+    </div>
+    <div class="scroll-x">
+      <table class="w-full text-sm border-collapse" id="results-table">
+        <thead>
+          <tr class="text-left text-xs" style="color:var(--ink-400); border-bottom:1px solid var(--paper-border);">
+            <th class="py-2 pr-3 font-medium">Servidor(a)</th>
+            <th class="py-2 pr-3 font-medium">Matrícula</th>
+            <th class="py-2 pr-3 font-medium">Processo</th>
+            <th class="py-2 pr-3 font-medium">Órgão</th>
+            <th class="py-2 pr-3 font-medium">Cargo</th>
+            <th class="py-2 pr-3 font-medium">Valor</th>
+          </tr>
+        </thead>
+        <tbody id="results-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TIER 2: REVISAR -->
+  <section id="review-section" class="hidden">
+    <div class="flex items-center gap-2 mb-3">
+      <h2 class="f-display text-lg" style="color:var(--navy-900);">Ocorrências para revisão manual</h2>
+      <span class="badge-revisar">confiança baixa</span>
+    </div>
+    <p class="text-xs mb-3" style="color:var(--ink-400);">A palavra-chave do ato e a sigla do órgão aparecem próximas, mas o formato não seguiu o padrão esperado. Confira o trecho antes de registrar.</p>
+    <div id="review-list" class="space-y-2.5"></div>
+  </section>
+
+  <!-- EMPTY STATE -->
+  <section id="empty-section" class="paper-card p-8 text-center hidden">
+    <p class="text-sm" style="color:var(--ink-600);">Nenhuma ocorrência de "<span id="empty-keyword" class="font-semibold"></span>" foi encontrada no texto extraído. Confira se o PDF corresponde à edição correta ou revise o texto extraído acima.</p>
+  </section>
+
+  <!-- HISTORY -->
+  <section class="paper-card p-5 sm:p-6">
+    <button id="history-toggle" class="w-full flex items-center justify-between gap-3">
+      <span class="flex items-center gap-2">
+        <svg class="chev" id="history-chev" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 1L7.5 5L2.5 9" stroke="var(--navy-900)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="f-display text-lg" style="color:var(--navy-900);">Histórico registrado</span>
+      </span>
+      <span class="f-mono text-xs" style="color:var(--ink-400);" id="history-count-label">0 registros</span>
+    </button>
+
+    <div id="history-body" class="hidden mt-4 space-y-3">
+      <div class="flex flex-wrap items-center gap-2.5 justify-between">
+        <input id="history-search" type="text" placeholder="Buscar por nome…" class="rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[180px]" style="border:1px solid var(--paper-border);">
+        <button id="btn-export-history" class="btn-ghost rounded-lg px-3.5 py-1.5 text-sm">Exportar histórico (Excel)</button>
+      </div>
+      <div class="scroll-x">
+        <table class="w-full text-sm border-collapse" id="history-table">
+          <thead>
+            <tr class="text-left text-xs" style="color:var(--ink-400); border-bottom:1px solid var(--paper-border);">
+              <th class="py-2 pr-3 font-medium">Servidor(a)</th>
+              <th class="py-2 pr-3 font-medium">Matrícula</th>
+              <th class="py-2 pr-3 font-medium">Processo</th>
+              <th class="py-2 pr-3 font-medium">Cargo</th>
+              <th class="py-2 pr-3 font-medium">Valor</th>
+              <th class="py-2 pr-3 font-medium">Confiança</th>
+              <th class="py-2 pr-3 font-medium">Registrado em</th>
+              <th class="py-2 pr-2 font-medium"></th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody"></tbody>
+        </table>
+      </div>
+      <p id="history-empty-msg" class="text-sm py-4 text-center hidden" style="color:var(--ink-400);">Nenhum registro ainda.</p>
+    </div>
+  </section>
+
+  <footer class="text-center text-xs pt-2 pb-4" style="color:var(--ink-400);">
+    Uso interno · CPM/CEEPLT · dados extraídos de publicações do Diário Oficial do Estado da Bahia
+  </footer>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  const PDF_WORKER_SRC = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  if (window.pdfjsLib) { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC; }
+
+  // ---------- utils ----------
+  function escapeHtml(s){
+    if (s === null || s === undefined) return "";
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+  function fmtDateTimeBR(iso){
+    if(!iso) return "";
+    try{ const d = new Date(iso); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+    catch(e){ return ""; }
+  }
+  function parseKeywordList(raw, upper){
+    return String(raw||"").split(/[,;]/).map(s=>s.trim()).filter(Boolean).map(s=>upper?s.toUpperCase():s);
+  }
+
+  // ---------- TIER 1: structured extraction ----------
+  function parseTier1(rawInput, tipoKeywords, orgaoKeywords){
+    const raw = String(rawInput || "").replace(/\s+/g," ").trim();
+    const results = [];
+    if(!raw) return results;
+
+    const headerRe = /Portaria\s+N[ºo°]\s*([\d]+)\s+de\s+(\d{1,2}\s+de\s+\w+\s+de\s+\d{4})/gi;
+    const headers = [...raw.matchAll(headerRe)].map(m => ({ index:m.index, numero:m[1], data:m[2] }));
+
+    // Fundamento/tipoAto display fields: built dynamically from the configured keywords so
+    // "resolve conceder <qualquer palavra-chave configurada> ..." is recognized. Covers both
+    // servidor-style ("ao(s) servidor...") and dependente-style ("à(s) dependente...") phrasing.
+    let fundamentos = [];
+    if(tipoKeywords.length){
+      const kwAlt = tipoKeywords.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
+      const fundRe = new RegExp('resolve conceder\\s+((?:'+kwAlt+')[^,]+)\\s*,\\s*com fundamento no\\s+([\\s\\S]+?)\\s*,?\\s*(?:ao\\(s\\)\\s*servidor|à\\(s\\)\\s*dependente)', 'gi');
+      fundamentos = [...raw.matchAll(fundRe)].map(m => ({ index:m.index, tipoAto:m[1].trim(), fundamento:m[2].trim() }));
+    }
+
+    function nearestPreceding(list, pos){ let best=null; for(const h of list){ if(h.index<=pos) best=h; else break; } return best; }
+    function nearbyContainsKeyword(pos, keywords){
+      if(!keywords || !keywords.length) return true;
+      const header = nearestPreceding(headers, pos);
+      const start = header ? header.index : Math.max(0, pos - 700);
+      const context = raw.slice(start, pos).toLowerCase();
+      return keywords.some(k => context.includes(k.toLowerCase()));
+    }
+
+    const itemRe = /(?:^|[\s.;:])([IVXLCDM]{1,6})\s+([A-ZÀ-Ú][A-ZÀ-Ú'\.\- ]{2,90}?),\s*proc\.?\s*(?:n[ºo°]\.?)?\s*([\d\.\-\/]{5,40})/g;
+    const items = [...raw.matchAll(itemRe)];
+    const MAX_ITEM_LEN = 1000;
+
+    for(let j=0; j<items.length; j++){
+      const m = items[j];
+      const itemStart = m.index;
+      const bounds = [raw.length, itemStart + MAX_ITEM_LEN];
+      if (j+1 < items.length) bounds.push(items[j+1].index);
+      const nextHeader = headers.find(h => h.index > itemStart);
+      if (nextHeader) bounds.push(nextHeader.index);
+      const itemEnd = Math.min(...bounds);
+
+      const itemText = raw.slice(itemStart, itemEnd);
+      const afterProcesso = itemText.slice(m[0].length);
+
+      const matriculaMatch = itemText.match(/matr[ií]cula\s*[:\-]?\s*(\d{3,12})/i);
+      if(!matriculaMatch) continue;
+      const afterMatricula = itemText.slice(itemText.indexOf(matriculaMatch[0]) + matriculaMatch[0].length);
+      const provMatch = afterMatricula.match(/proventos?\s+(integrais|proporcionais)?[^R]{0,15}R\$\s*([\d\.,]+)\s*(?:\(([^)]*)\))?/i);
+      if(!provMatch) continue;
+      if(!nearbyContainsKeyword(itemStart, tipoKeywords)) continue;
+
+      const roman = m[1];
+      const nome = m[2].replace(/\s+/g," ").trim();
+      const processo = m[3].trim();
+      const orgaoMatch = afterProcesso.match(/^\s*,?\s*([A-ZÀ-Ú0-9\/]{2,15})\s*,/);
+      const orgao = orgaoMatch ? orgaoMatch[1].trim() : null;
+
+      let cargoDetalhe = null;
+      if(orgaoMatch){
+        const cargoStart = m[0].length + orgaoMatch[0].length;
+        const cargoEndIdx = itemText.indexOf(matriculaMatch[0], cargoStart);
+        if(cargoEndIdx > cargoStart){
+          cargoDetalhe = itemText.slice(cargoStart, cargoEndIdx).replace(/,\s*$/,"").replace(/\s+/g," ").trim();
+        }
+      }
+
+      const header = nearestPreceding(headers, itemStart);
+      const fund = nearestPreceding(fundamentos, itemStart);
+      const orgaoUpper = orgao ? orgao.toUpperCase() : null;
+      const isMatch = orgaoKeywords.length === 0 ? true : !!(orgaoUpper && orgaoKeywords.includes(orgaoUpper));
+
+      results.push({
+        tier:1, confidence:'alta',
+        portariaNumero: header?header.numero:null, portariaData: header?header.data:null,
+        tipoAto: fund?fund.tipoAto:null, fundamento: fund?fund.fundamento:null,
+        item: roman, nome, processo, orgao, isMatch, cargoDetalhe,
+        matricula: matriculaMatch[1],
+        tipoProventos: provMatch[1] ? provMatch[1].toLowerCase() : null,
+        valor: provMatch[2], valorExtenso: provMatch[3] || null,
+        spanStart: itemStart, spanEnd: itemEnd
+      });
+    }
+    return results;
+  }
+
+  // ---------- TIER 2: keyword-proximity fallback ----------
+  function parseTier2(rawInput, tipoKeywords, orgaoKeywords, tier1Results){
+    const raw = String(rawInput || "").replace(/\s+/g," ").trim();
+    const candidates = [];
+    if(!raw || !tipoKeywords || !tipoKeywords.length) return candidates;
+
+    const kwAlt = tipoKeywords.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
+    const kwRe = new RegExp(kwAlt, 'gi');
+    const kwHits = [...raw.matchAll(kwRe)];
+    const WINDOW = 1800;
+    const nextHeaderRe = /Portaria\s+N[ºo°]\s*[\d]+\s+de\s+\d{1,2}\s+de\s+\w+\s+de\s+\d{4}/gi;
+    const headerPositions = [...raw.matchAll(nextHeaderRe)].map(m => m.index);
+    const coveredSpans = tier1Results.map(r => [r.spanStart, r.spanEnd]);
+    function isCovered(pos){ return coveredSpans.some(([s,e]) => pos >= s-50 && pos <= e+50); }
+
+    const seenWindows = new Set();
+    for(const hit of kwHits){
+      const pos = hit.index;
+      if(isCovered(pos)) continue;
+      let end = pos + WINDOW;
+      const nextHeader = headerPositions.find(h => h > pos);
+      if(nextHeader && nextHeader < end) end = nextHeader;
+      end = Math.min(end, raw.length);
+      const key = pos+':'+end;
+      if(seenWindows.has(key)) continue;
+      seenWindows.add(key);
+
+      const windowText = raw.slice(pos, end);
+      const hasOrgaoKw = orgaoKeywords.length === 0 ? true : orgaoKeywords.some(k => new RegExp('\\b'+k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i').test(windowText));
+      if(!hasOrgaoKw) continue;
+
+      const matriculaRe = /matr[ií]cula\s*[:\-]?\s*(\d{3,12})/gi;
+      const matMatches = [...windowText.matchAll(matriculaRe)];
+      const uncoveredMats = matMatches.filter(mm => !isCovered(pos+mm.index));
+
+      if(uncoveredMats.length === 0){
+        if(matMatches.length === 0){
+          candidates.push({ tier:2, confidence:'baixa', nome:null, matricula:null,
+            snippet: windowText.slice(0,260).trim() + (windowText.length>260?'…':''),
+            spanStart:pos, spanEnd:end });
+        }
+        continue;
+      }
+      for(const mm of uncoveredMats){
+        const before = windowText.slice(Math.max(0, mm.index-150), mm.index);
+        const capsRunRe = /([A-ZÀ-Ú]{2,}(?:\s+[A-ZÀ-Ú'\.\-]{2,}){1,6})(?!.*[A-ZÀ-Ú]{2,}(?:\s+[A-ZÀ-Ú'\.\-]{2,}){1,6})/;
+        const capsMatch = before.match(capsRunRe);
+        const nome = capsMatch ? capsMatch[1].replace(/\s+/g," ").trim() : null;
+        candidates.push({
+          tier:2, confidence:'baixa', nome, matricula: mm[1],
+          snippet: windowText.slice(Math.max(0,mm.index-100), Math.min(windowText.length, mm.index+120)).trim(),
+          spanStart:pos, spanEnd:end
+        });
+      }
+    }
+    return candidates;
+  }
+
+  // ---------- PDF extraction ----------
+  function itemsToPageText(items){
+    let text = ""; let lastY = null, lastEndX = null;
+    for(const item of items){
+      const tr = item.transform || [1,0,0,1,0,0];
+      const x = tr[4], y = tr[5];
+      if(lastY !== null && Math.abs(y-lastY) > 2){ text += "\n"; }
+      else if(lastEndX !== null && (x-lastEndX) > 1 && text.length && !/\s$/.test(text)){ text += " "; }
+      text += item.str;
+      lastY = y; lastEndX = x + (item.width || 0);
+    }
+    return text;
+  }
+  async function extractTextFromPdf(file, onProgress){
+    if(!window.pdfjsLib) throw new Error("Biblioteca de leitura de PDF não carregou. Verifique a conexão com a internet e recarregue a página.");
+    const buf = await file.arrayBuffer();
+    const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+    let fullText = "";
+    for(let p=1; p<=pdf.numPages; p++){
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      fullText += itemsToPageText(content.items) + "\n\n";
+      if(onProgress) onProgress(p, pdf.numPages);
+    }
+    return { text: fullText, numPages: pdf.numPages };
+  }
+
+  // ---------- Firebase (backend real para quando publicar no Vercel) ----------
+  // Preencha com a configuração do SEU projeto Firebase: Console do Firebase > Configurações do
+  // projeto > Seus apps > SDK do Firebase > Config. Pode reaproveitar um projeto já existente dos
+  // outros sistemas (SAGP, SCA, SCC...) — os dados deste monitor ficam isolados sob o caminho
+  // "monitorAposentadoriasSEC" e não colidem com o resto. Regra do Realtime Database necessária:
+  //   { "rules": { "monitorAposentadoriasSEC": { ".read": true, ".write": true } } }
+  const firebaseConfig = {
+    apiKey: "AIzaSyBpAVvamir6kR4TW65dRUCdN5OJLEtxlyY",
+    authDomain: "monitor-de-aposentadorias.firebaseapp.com",
+    databaseURL: "https://monitor-de-aposentadorias-default-rtdb.firebaseio.com",
+    projectId: "monitor-de-aposentadorias",
+    storageBucket: "monitor-de-aposentadorias.firebasestorage.app",
+    messagingSenderId: "213152941238",
+    appId: "1:213152941238:web:6da00e9565df17fb4fd217"
+  };
+  const FB_ROOT = "monitorAposentadoriasSEC";
+  let fbDb = null;
+  try{
+    if(window.firebase && firebaseConfig.apiKey !== "COLE_AQUI"){
+      firebase.initializeApp(firebaseConfig);
+      fbDb = firebase.database();
+    }
+  }catch(e){ console.error("Firebase não inicializou:", e); }
+
+  // ---------- storage: Firebase (Vercel) -> window.storage (dentro do Claude) -> memória ----------
+  const STORAGE_KEY = "sec-aposentadorias-v2";
+  let memoryFallback = null;
+  const windowStorageAvailable = (typeof window !== "undefined" && window.storage && typeof window.storage.get === "function");
+
+  async function loadConfig(){
+    const dflt = { tipoKeyword:"aposentadoria", orgaoKeywords:"SEC" };
+    if(fbDb){
+      try{ const snap = await fbDb.ref(FB_ROOT+"/config").once("value"); return snap.exists() ? Object.assign({}, dflt, snap.val()) : dflt; }
+      catch(e){ console.error(e); return dflt; }
+    }
+    if(windowStorageAvailable){
+      try{ const res = await window.storage.get(STORAGE_KEY); if(res && res.value){ return Object.assign({}, dflt, JSON.parse(res.value).config||{}); } }
+      catch(e){}
+    }
+    return (memoryFallback && memoryFallback.config) || dflt;
+  }
+  async function saveConfig(config){
+    if(fbDb){ try{ await fbDb.ref(FB_ROOT+"/config").set(config); return; }catch(e){ console.error(e); } }
+    if(windowStorageAvailable){
+      try{
+        const res = await window.storage.get(STORAGE_KEY).catch(()=>null);
+        const existing = (res && res.value) ? JSON.parse(res.value) : { history: [] };
+        existing.config = config;
+        await window.storage.set(STORAGE_KEY, JSON.stringify(existing));
+        return;
+      }catch(e){}
+    }
+    memoryFallback = memoryFallback || {};
+    memoryFallback.config = config;
+  }
+
+  function historySnapshotToArray(val){
+    if(!val) return [];
+    return Object.keys(val).map(key => Object.assign({ _fbKey:key }, val[key]));
+  }
+  async function loadHistoryOnce(){
+    if(fbDb){
+      try{ const snap = await fbDb.ref(FB_ROOT+"/historico").once("value"); return historySnapshotToArray(snap.val()); }
+      catch(e){ console.error(e); return []; }
+    }
+    if(windowStorageAvailable){
+      try{ const res = await window.storage.get(STORAGE_KEY); if(res && res.value){ return JSON.parse(res.value).history || []; } }
+      catch(e){}
+    }
+    return (memoryFallback && memoryFallback.history) || [];
+  }
+  function subscribeHistory(onChange){
+    if(fbDb){ fbDb.ref(FB_ROOT+"/historico").on("value", (snap)=> onChange(historySnapshotToArray(snap.val()))); return; }
+    // Sem Firebase configurado: não há push em tempo real entre dispositivos — carrega uma vez.
+    loadHistoryOnce().then(onChange);
+  }
+  async function persistHistoryArrayFallback(arr){
+    if(windowStorageAvailable){
+      try{
+        const res = await window.storage.get(STORAGE_KEY).catch(()=>null);
+        const existing = (res && res.value) ? JSON.parse(res.value) : { config: state.config };
+        existing.history = arr;
+        await window.storage.set(STORAGE_KEY, JSON.stringify(existing));
+      }catch(e){}
+    } else {
+      memoryFallback = memoryFallback || {};
+      memoryFallback.history = arr;
+    }
+    onHistoryChanged(arr);
+  }
+  async function pushHistoryRecord(record){
+    if(fbDb){ const ref = await fbDb.ref(FB_ROOT+"/historico").push(record); return ref.key; }
+    const current = await loadHistoryOnce();
+    const withKey = Object.assign({ _fbKey: 'local_'+Date.now()+'_'+Math.random().toString(36).slice(2) }, record);
+    await persistHistoryArrayFallback(current.concat([withKey]));
+    return withKey._fbKey;
+  }
+  async function removeHistoryRecordByKey(fbKey){
+    if(fbDb){ await fbDb.ref(FB_ROOT+"/historico/"+fbKey).remove(); return; }
+    const current = await loadHistoryOnce();
+    await persistHistoryArrayFallback(current.filter(r => r._fbKey !== fbKey));
+  }
+
+  // ---------- state ----------
+  const state = {
+    config: { tipoKeyword:"aposentadoria", orgaoKeywords:"SEC" },
+    todayT1: [], todayT2: [], todayFilter: "all",
+    history: [], historyOpen:false, historySearch:""
+  };
+
+  function onHistoryChanged(newHistory){
+    state.history = newHistory;
+    renderStats();
+    if(state.historyOpen) renderHistoryTable();
+  }
+
+  async function addNewToHistory(items){
+    const existingKeys = new Set(state.history.map(r => r.processo || ('mat:'+r.matricula)));
+    const toAdd = items.filter(r => !existingKeys.has(r.processo || ('mat:'+r.matricula)));
+    for(const item of toAdd){
+      const stamped = Object.assign({}, item, { dataRegistro: new Date().toISOString() });
+      await pushHistoryRecord(stamped);
+    }
+    return { added: toAdd.length, skipped: items.length - toAdd.length };
+  }
+  async function removeHistoryRecord(fbKey){
+    await removeHistoryRecordByKey(fbKey);
+  }
+
+  // ---------- rendering ----------
+  function renderStats(){
+    document.getElementById("stat-total-num").textContent = state.todayT1.length ? state.todayT1.length : "—";
+    document.getElementById("stat-sec-num").textContent = state.todayT1.length ? state.todayT1.filter(i=>i.isMatch).length : "—";
+    document.getElementById("stat-review-num").textContent = (state.todayT1.length || state.todayT2.length) ? state.todayT2.length : "—";
+    document.getElementById("stat-hist-num").textContent = state.history.length;
+    document.getElementById("history-count-label").textContent = state.history.length + (state.history.length===1?" registro":" registros");
+    document.getElementById("stat-total").classList.toggle("active", state.todayFilter==="all" && state.todayT1.length>0);
+    document.getElementById("stat-sec").classList.toggle("active", state.todayFilter==="sec");
+  }
+  function pulse(el){ el.classList.remove("pulse-once"); void el.offsetWidth; el.classList.add("pulse-once"); }
+
+  function itemRowHtml(it, idx, tableKind){
+    const orgaoHtml = it.isMatch ? '<span class="selo-sec">'+escapeHtml(it.orgao||"—")+'</span>' : '<span class="orgao-pill">'+escapeHtml(it.orgao||"—")+'</span>';
+    const rowClass = it.isMatch ? "ledger-row-sec" : "ledger-row-other";
+    return (
+      '<tr class="ledger-row '+rowClass+' fade-in" data-detail-target="'+tableKind+'-detail-'+idx+'">' +
+        '<td class="py-2.5 pr-3">'+escapeHtml(it.nome)+'</td>' +
+        '<td class="py-2.5 pr-3 f-mono">'+escapeHtml(it.matricula||"—")+'</td>' +
+        '<td class="py-2.5 pr-3 f-mono text-xs">'+escapeHtml(it.processo)+'</td>' +
+        '<td class="py-2.5 pr-3">'+orgaoHtml+'</td>' +
+        '<td class="py-2.5 pr-3">'+escapeHtml(it.cargoDetalhe||"—")+'</td>' +
+        '<td class="py-2.5 pr-3 f-mono">R$ '+escapeHtml(it.valor||"—")+'</td>' +
+      '</tr>' +
+      '<tr class="detail-row hidden" id="'+tableKind+'-detail-'+idx+'">' +
+        '<td colspan="6" class="pb-3 px-3 text-xs" style="color:var(--ink-600);">' +
+          (it.tipoAto ? '<span class="font-semibold">'+escapeHtml(it.tipoAto)+'</span><br>' : '') +
+          (it.fundamento ? 'Fundamento: '+escapeHtml(it.fundamento)+'<br>' : '') +
+          (it.valorExtenso ? 'Valor por extenso: '+escapeHtml(it.valorExtenso)+'<br>' : '') +
+          (it.portariaNumero ? ('Portaria nº '+escapeHtml(it.portariaNumero)+(it.portariaData?' de '+escapeHtml(it.portariaData):'')) : 'Portaria não identificada no trecho') +
+        '</td>' +
+      '</tr>'
+    );
+  }
+
+  function renderResultsTable(){
+    const resultsSection = document.getElementById("results-section");
+    const tbody = document.getElementById("results-tbody");
+    const label = document.getElementById("results-filter-label");
+    if(!state.todayT1.length){ resultsSection.classList.add("hidden"); return; }
+    resultsSection.classList.remove("hidden");
+    const rows = state.todayFilter === "sec" ? state.todayT1.filter(i=>i.isMatch) : state.todayT1;
+    label.textContent = state.todayFilter === "sec" ? "mostrando apenas confirmados no órgão" : "mostrando todos os órgãos encontrados";
+    tbody.innerHTML = rows.map((it,idx)=>itemRowHtml(it, idx, "today")).join("");
+  }
+
+  function reviewCardHtml(c, idx){
+    const hasBoth = c.nome && c.matricula;
+    return (
+      '<div class="review-card p-3.5 fade-in" data-review-idx="'+idx+'">' +
+        '<div class="flex flex-wrap items-start justify-between gap-2">' +
+          '<div>' +
+            (c.nome ? '<p class="text-sm font-semibold" style="color:var(--navy-900);">'+escapeHtml(c.nome)+'</p>' : '<p class="text-sm italic" style="color:var(--ink-400);">Nome não identificado automaticamente</p>') +
+            (c.matricula ? '<p class="text-xs f-mono mt-0.5" style="color:var(--ink-600);">matrícula '+escapeHtml(c.matricula)+'</p>' : '') +
+          '</div>' +
+          (hasBoth ? '<button class="btn-small btn-confirm-review" data-review-idx="'+idx+'">Confirmar e registrar</button>' : '') +
+        '</div>' +
+        '<p class="text-xs mt-2 leading-relaxed" style="color:var(--ink-600);">…'+escapeHtml(c.snippet)+'…</p>' +
+      '</div>'
+    );
+  }
+  function renderReviewList(){
+    const section = document.getElementById("review-section");
+    const list = document.getElementById("review-list");
+    if(!state.todayT2.length){ section.classList.add("hidden"); return; }
+    section.classList.remove("hidden");
+    list.innerHTML = state.todayT2.map((c,idx)=>reviewCardHtml(c, idx)).join("");
+  }
+
+  function renderHistoryTable(){
+    const tbody = document.getElementById("history-tbody");
+    const emptyMsg = document.getElementById("history-empty-msg");
+    const term = state.historySearch.trim().toLowerCase();
+    let rows = state.history.slice().sort((a,b)=> (b.dataRegistro||"").localeCompare(a.dataRegistro||""));
+    if(term) rows = rows.filter(r => (r.nome||"").toLowerCase().includes(term));
+    if(!rows.length){
+      tbody.innerHTML = "";
+      emptyMsg.classList.remove("hidden");
+      emptyMsg.textContent = term ? "Nenhum registro encontrado para essa busca." : "Nenhum registro ainda.";
+      return;
+    }
+    emptyMsg.classList.add("hidden");
+    tbody.innerHTML = rows.map((it,idx)=>{
+      const key = it._fbKey || it.processo || ('mat:'+it.matricula);
+      const confBadge = it.confidence === 'baixa'
+        ? '<span class="badge-revisar">baixa</span>'
+        : '<span class="text-xs" style="color:var(--ink-400);">alta</span>';
+      return (
+        '<tr class="ledger-row ledger-row-sec fade-in" data-detail-target="hist-detail-'+idx+'">' +
+          '<td class="py-2.5 pr-3">'+escapeHtml(it.nome)+'</td>' +
+          '<td class="py-2.5 pr-3 f-mono">'+escapeHtml(it.matricula||"—")+'</td>' +
+          '<td class="py-2.5 pr-3 f-mono text-xs">'+escapeHtml(it.processo||"—")+'</td>' +
+          '<td class="py-2.5 pr-3">'+escapeHtml(it.cargoDetalhe||"—")+'</td>' +
+          '<td class="py-2.5 pr-3 f-mono">'+(it.valor?('R$ '+escapeHtml(it.valor)):"—")+'</td>' +
+          '<td class="py-2.5 pr-3">'+confBadge+'</td>' +
+          '<td class="py-2.5 pr-3 text-xs">'+fmtDateTimeBR(it.dataRegistro)+'</td>' +
+          '<td class="py-2.5 pr-2 text-right"><button class="btn-remove text-xs" data-key="'+escapeHtml(key)+'" style="color:var(--brick-600);" title="Remover do histórico">remover</button></td>' +
+        '</tr>' +
+        '<tr class="detail-row hidden" id="hist-detail-'+idx+'">' +
+          '<td colspan="8" class="pb-3 px-3 text-xs" style="color:var(--ink-600);">' +
+            (it.tipoAto ? '<span class="font-semibold">'+escapeHtml(it.tipoAto)+'</span><br>' : '') +
+            (it.fundamento ? 'Fundamento: '+escapeHtml(it.fundamento)+'<br>' : '') +
+            (it.snippet ? 'Trecho: …'+escapeHtml(it.snippet)+'…' : '') +
+          '</td>' +
+        '</tr>'
+      );
+    }).join("");
+  }
+
+  // ---------- export ----------
+  function exportToExcel(rows, filename, sheetName){
+    if(!rows.length) return;
+    const data = rows.map(r => ({
+      "Nome": r.nome || "", "Matrícula": r.matricula || "", "Processo": r.processo || "",
+      "Órgão": r.orgao || "", "Cargo/Detalhe": r.cargoDetalhe || "",
+      "Tipo de Aposentadoria": r.tipoAto || "", "Fundamento Legal": r.fundamento || "",
+      "Tipo de Proventos": r.tipoProventos || "", "Valor (R$)": r.valor || "",
+      "Valor por Extenso": r.valorExtenso || "", "Nº Portaria": r.portariaNumero || "",
+      "Data da Portaria": r.portariaData || "", "Confiança": r.confidence || "",
+      "Registrado em": r.dataRegistro ? fmtDateTimeBR(r.dataRegistro) : ""
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws["!cols"] = [{wch:28},{wch:12},{wch:26},{wch:8},{wch:30},{wch:26},{wch:38},{wch:14},{wch:13},{wch:36},{wch:12},{wch:20},{wch:10},{wch:16}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName || "Aposentadorias");
+    XLSX.writeFile(wb, filename);
+  }
+
+  // ---------- messages ----------
+  function showProcessMessage(t1Count, secCount, t2Count, added, skipped){
+    const el = document.getElementById("process-msg");
+    if(t1Count===0 && t2Count===0){ el.classList.add("hidden"); return; }
+    el.classList.remove("hidden");
+    let msg = t1Count + (t1Count===1?" ato identificado":" atos identificados") + " · " + secCount + " confirmado(s) no órgão";
+    if(t2Count>0) msg += " · " + t2Count + " para revisar";
+    if(added>0) msg += " · " + added + " novo(s) no histórico";
+    if(skipped>0) msg += " · " + skipped + " já registrado(s)";
+    el.textContent = msg;
+    el.style.color = "var(--navy-800)";
+  }
+  function showPdfError(msg){
+    const el = document.getElementById("pdf-error");
+    if(!msg){ el.classList.add("hidden"); el.textContent=""; return; }
+    el.textContent = msg; el.classList.remove("hidden");
+  }
+  function setPdfProgress(visible, text, pct){
+    document.getElementById("pdf-status").classList.toggle("hidden", !visible);
+    if(text) document.getElementById("pdf-status-text").textContent = text;
+    if(typeof pct === "number") document.getElementById("pdf-progress-fill").style.width = pct+"%";
+  }
+
+  // ---------- example text (mirrors the multi-act edition scenario, including a messy OCR-like item) ----------
+  const EXEMPLO = "Portaria Nº 01106500 de 07 de Agosto de 2026\nO(A) SECRETÁRIO(A) DA ADMINISTRAÇÃO resolve NOMEAR, em virtude de aprovação em concurso público, para o cargo de Analista Técnico:\nI PAULO ROBERTO FIGUEIREDO, proc. 500.1111.2026.0000111-01, SEC, Analista Técnico, matrícula 50000001, lotação Diretoria Regional de Educação 12.\n\nPortaria Nº 01106520 de 07 de Agosto de 2026\nO(A) SECRETÁRIO(A) DA ADMINISTRAÇÃO, no uso de suas atribuições conferidas pela Lei 10.955/07 e pelo Decreto 11.688/09, resolve conceder Aposentadoria Voluntária, com fundamento no Art. 3°, §§2°, 3º, 5°, I, e 7º da EC nº 26/2020, com redação dada pela EC n° 27/2021, ao(s) servidor(es) no(s) item(ns) a seguir discriminado(s):\nI ANTONIO CARLOS DE MATOS, proc. 700.4444.2026.0000444-04, SEC, Professor, PADRÃO N, GRAU VIA, matrícula 70000004, proventos integrais - R$19.850,30 (dezenove mil oitocentos e cinquenta reais e trinta centavos), compostos por Vencimento - R$11.000,00, 40.00 % Adic - R$8.850,30.\nII ROBERTA LIMA AZEVEDO, proc. 700.5555.2026.0000555-05, SEAGRI, Engenheiro Agronomo, matrícula 70000005, proventos integrais - R$14.200,00 (quatorze mil e duzentos reais), compostos por Vencimento - R$14.200,00.\nIII JOSE CARLOS RIBEIRO NETO, proc. 700.6666.2026.0000666-06, SEC, Professor, PADRÃO L, GRAU IIIB, matrícula 70000006, proventos proporcionais - R$6.400,00 (seis mil e quatrocentos reais), compostos por Vencimento - R$6.400,00.\n\nPortaria Nº 01106530 de 07 de Agosto de 2026\nO(A) SECRETÁRIO(A) DA ADMINISTRAÇÃO resolve conceder Aposentadoria por Invalidez, com fundamento no Art. 5º-A da EC nº 26/2020, ao(s) servidor(es) no(s) item(ns) a seguir discriminado(s):\nCLARICE FERREIRA DOS ANJOS proc 800 7777 2026 0000777 07 SEC Professor PADRAO K matricula80000007 proventosintegrais - R$5.600,00 (cinco mil e seiscentos reais) compostos por Vencimento - R$5.600,00.";
+
+  // ---------- core processing ----------
+  function runProcessing(rawText){
+    const tipoKeywords = parseKeywordList(state.config.tipoKeyword, false);
+    const orgaoKeywords = parseKeywordList(state.config.orgaoKeywords, true);
+    const t1 = parseTier1(rawText, tipoKeywords, orgaoKeywords);
+    const t2 = parseTier2(rawText, tipoKeywords, orgaoKeywords, t1);
+    return { t1, t2 };
+  }
+
+  async function onProcessar(){
+    const raw = document.getElementById("input-text").value;
+    document.getElementById("empty-keyword").textContent = state.config.tipoKeyword || "—";
+    if(!raw.trim()){
+      state.todayT1 = []; state.todayT2 = [];
+      renderResultsTable(); renderReviewList(); renderStats();
+      document.getElementById("empty-section").classList.add("hidden");
+      return;
+    }
+    const { t1, t2 } = runProcessing(raw);
+    state.todayT1 = t1; state.todayT2 = t2; state.todayFilter = "all";
+    renderResultsTable(); renderReviewList(); renderStats();
+    pulse(document.getElementById("stat-total-num"));
+
+    document.getElementById("empty-section").classList.toggle("hidden", !(t1.length===0 && t2.length===0));
+
+    const matched = t1.filter(i=>i.isMatch);
+    let added=0, skipped=0;
+    if(matched.length){
+      const res = await addNewToHistory(matched);
+      added = res.added; skipped = res.skipped;
+      renderStats(); renderHistoryTable();
+      pulse(document.getElementById("stat-hist-num"));
+    }
+    showProcessMessage(t1.length, matched.length, t2.length, added, skipped);
+  }
+
+  function onLimpar(){
+    document.getElementById("input-text").value = "";
+    state.todayT1 = []; state.todayT2 = []; state.todayFilter = "all";
+    renderResultsTable(); renderReviewList(); renderStats();
+    document.getElementById("empty-section").classList.add("hidden");
+    document.getElementById("process-msg").classList.add("hidden");
+    showPdfError(null);
+  }
+
+  async function handlePdfFile(file){
+    showPdfError(null);
+    if(!file){ return; }
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name||"");
+    if(!isPdf){ showPdfError("Este arquivo não é um PDF. Selecione o PDF baixado do Diário Oficial."); return; }
+
+    setPdfProgress(true, "Abrindo PDF…", 0);
+    try{
+      const { text, numPages } = await extractTextFromPdf(file, (p, total) => {
+        setPdfProgress(true, "Extraindo texto… página "+p+" de "+total, Math.round((p/total)*100));
+      });
+      document.getElementById("input-text").value = text.trim();
+      setPdfProgress(false);
+      if(text.trim().length < 200){
+        showPdfError("Pouco texto foi extraído deste PDF ("+numPages+" página(s)). Ele pode ser uma versão digitalizada (imagem) — tente colar o texto manualmente ou use a versão HTML do Diário.");
+      }
+      await onProcessar();
+    }catch(err){
+      console.error(err);
+      setPdfProgress(false);
+      showPdfError("Não foi possível ler este PDF. Verifique se o arquivo não está corrompido ou protegido por senha, ou cole o texto manualmente abaixo.");
+    }
+  }
+
+  function wireEvents(){
+    document.getElementById("btn-processar").addEventListener("click", onProcessar);
+    document.getElementById("btn-limpar").addEventListener("click", onLimpar);
+    document.getElementById("btn-exemplo").addEventListener("click", ()=>{ document.getElementById("input-text").value = EXEMPLO; });
+
+    const cfgTipo = document.getElementById("cfg-tipo");
+    const cfgOrgao = document.getElementById("cfg-orgao");
+    cfgTipo.addEventListener("change", ()=>{ state.config.tipoKeyword = cfgTipo.value; saveConfig(state.config); });
+    cfgOrgao.addEventListener("change", ()=>{ state.config.orgaoKeywords = cfgOrgao.value; saveConfig(state.config); });
+
+    // dropzone: click / keyboard / drag / drop / paste
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("file-input");
+    dropzone.addEventListener("click", ()=> fileInput.click());
+    dropzone.addEventListener("keydown", (e)=>{ if(e.key==="Enter" || e.key===" "){ e.preventDefault(); fileInput.click(); } });
+    fileInput.addEventListener("change", (e)=>{ if(e.target.files[0]) handlePdfFile(e.target.files[0]); });
+    ["dragenter","dragover"].forEach(evt => dropzone.addEventListener(evt, (e)=>{ e.preventDefault(); dropzone.classList.add("drag"); }));
+    ["dragleave","drop"].forEach(evt => dropzone.addEventListener(evt, (e)=>{ e.preventDefault(); dropzone.classList.remove("drag"); }));
+    dropzone.addEventListener("drop", (e)=>{ const f = e.dataTransfer.files && e.dataTransfer.files[0]; if(f) handlePdfFile(f); });
+    document.addEventListener("paste", (e)=>{
+      const files = e.clipboardData && e.clipboardData.files;
+      if(files && files.length > 0){ e.preventDefault(); handlePdfFile(files[0]); }
+    });
+
+    document.getElementById("stat-total").addEventListener("click", ()=>{
+      if(!state.todayT1.length) return;
+      state.todayFilter = "all"; renderResultsTable(); renderStats();
+      document.getElementById("results-section").scrollIntoView({behavior:"smooth", block:"nearest"});
+    });
+    document.getElementById("stat-sec").addEventListener("click", ()=>{
+      if(!state.todayT1.length) return;
+      state.todayFilter = "sec"; renderResultsTable(); renderStats();
+      document.getElementById("results-section").scrollIntoView({behavior:"smooth", block:"nearest"});
+    });
+    document.getElementById("stat-review").addEventListener("click", ()=>{
+      if(!state.todayT2.length) return;
+      document.getElementById("review-section").scrollIntoView({behavior:"smooth", block:"nearest"});
+    });
+    document.getElementById("stat-hist").addEventListener("click", ()=>{
+      openHistory();
+      document.getElementById("history-toggle").scrollIntoView({behavior:"smooth", block:"start"});
+    });
+
+    document.getElementById("history-toggle").addEventListener("click", ()=>{ state.historyOpen ? closeHistory() : openHistory(); });
+    document.getElementById("history-search").addEventListener("input", (e)=>{ state.historySearch = e.target.value; renderHistoryTable(); });
+    document.getElementById("btn-export-history").addEventListener("click", ()=>{ exportToExcel(state.history, "historico_aposentadorias.xlsx", "Histórico"); });
+
+    document.body.addEventListener("click", async (e)=>{
+      const confirmBtn = e.target.closest(".btn-confirm-review");
+      if(confirmBtn){
+        const idx = parseInt(confirmBtn.getAttribute("data-review-idx"), 10);
+        const c = state.todayT2[idx];
+        if(c && c.nome && c.matricula){
+          const res = await addNewToHistory([{ nome:c.nome, matricula:c.matricula, processo:null, orgao:null,
+            cargoDetalhe:null, valor:null, tipoAto:null, fundamento:null, confidence:'baixa', snippet:c.snippet }]);
+          renderStats(); renderHistoryTable(); pulse(document.getElementById("stat-hist-num"));
+          confirmBtn.textContent = res.added>0 ? "Registrado ✓" : "Já registrado";
+          confirmBtn.disabled = true;
+        }
+        return;
+      }
+      const removeBtn = e.target.closest(".btn-remove");
+      if(removeBtn){
+        e.stopPropagation();
+        const key = removeBtn.getAttribute("data-key");
+        if(confirm("Remover este registro do histórico?")) removeHistoryRecord(key);
+        return;
+      }
+      const row = e.target.closest(".ledger-row");
+      if(row && row.dataset.detailTarget){
+        const target = document.getElementById(row.dataset.detailTarget);
+        if(target) target.classList.toggle("hidden");
+      }
+    });
+  }
+
+  function openHistory(){
+    state.historyOpen = true;
+    document.getElementById("history-body").classList.remove("hidden");
+    document.getElementById("history-chev").classList.add("open");
+    renderHistoryTable();
+  }
+  function closeHistory(){
+    state.historyOpen = false;
+    document.getElementById("history-body").classList.add("hidden");
+    document.getElementById("history-chev").classList.remove("open");
+  }
+
+  // ---------- init ----------
+  async function init(){
+    document.getElementById("today-date").textContent = new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'long', year:'numeric'});
+    state.config = await loadConfig();
+    document.getElementById("cfg-tipo").value = state.config.tipoKeyword;
+    document.getElementById("cfg-orgao").value = state.config.orgaoKeywords;
+    renderStats();
+    wireEvents();
+    subscribeHistory(onHistoryChanged);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
