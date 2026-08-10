@@ -478,6 +478,13 @@
       </div>
       <p id="manual-nte-msg" class="text-xs mt-2 hidden"></p>
     </div>
+
+    <div class="mt-4 pt-4" style="border-top:1px solid var(--paper-border);">
+      <p class="text-xs font-semibold mb-1" style="color:var(--navy-900);">Manutenção</p>
+      <p class="text-xs mb-2.5" style="color:var(--ink-400);">Remove a expressão "SEDE:" de todos os valores de NTE já salvos — tanto na base de referência quanto nos registros de pessoas (Produção e Arquivado).</p>
+      <button id="btn-cleanup-sede" class="btn-ghost rounded-lg px-4 py-2 text-sm">Remover "SEDE:" de todos os NTE</button>
+      <p id="cleanup-sede-msg" class="text-xs mt-2 hidden"></p>
+    </div>
   </section>
 
   <!-- BASE POLO -->
@@ -1018,6 +1025,46 @@
 
   // ---------- base de Polo × NTE (relaciona NTE a Polo — chave é o NTE, não a matrícula) ----------
   function normalizeNteKey(s){ return String(s||"").trim().toUpperCase(); }
+
+  // Manutenção: remove a expressão "SEDE:" (com variações de espaço/maiúsculas) de um valor de
+  // NTE, normalizando espaços e hífens soltos que sobrariam.
+  function stripSedeExpression(value){
+    if(!value) return value;
+    let cleaned = String(value).replace(/\s*sede\s*:\s*/gi, ' ');
+    cleaned = cleaned.replace(/\s{2,}/g, ' ');
+    cleaned = cleaned.replace(/[\s-]+$/, '');
+    return cleaned.trim();
+  }
+  async function cleanupSedeInNteBase(){
+    const updatedMap = {};
+    let changed = 0;
+    for(const matricula in state.nteBase.map){
+      const entry = state.nteBase.map[matricula];
+      const novoNte = stripSedeExpression(entry.nte);
+      if(novoNte !== entry.nte) changed++;
+      updatedMap[matricula] = Object.assign({}, entry, { nte: novoNte });
+    }
+    if(changed > 0){
+      const updated = { map: updatedMap, count: state.nteBase.count, atualizadoEm: new Date().toISOString() };
+      state.nteBase = updated;
+      await saveNteBase(updated);
+    }
+    return changed;
+  }
+  async function cleanupSedeInPersonRecords(){
+    let changed = 0;
+    for(const bucket of ["atual","arquivado"]){
+      const rows = bucket==="atual" ? state.history : state.archived;
+      for(const r of rows){
+        const novoNte = stripSedeExpression(r.nte);
+        if(novoNte !== r.nte){
+          changed++;
+          await updateInBucket(bucket, r._fbKey, { nte: novoNte });
+        }
+      }
+    }
+    return changed;
+  }
   async function loadPoloBase(){
     const empty = { map:{}, count:0, atualizadoEm:null };
     if(fbDb){
@@ -1705,6 +1752,20 @@
     setTimeout(()=>msg.classList.add("hidden"), 4000);
   }
 
+  async function handleCleanupSede(){
+    const msg = document.getElementById("cleanup-sede-msg");
+    if(!confirm('Remover a expressão "SEDE:" de todos os valores de NTE já salvos (base de referência e registros de pessoas)? Essa ação não pode ser desfeita.')) return;
+    msg.textContent = "Limpando…";
+    msg.style.color = "var(--ink-400)";
+    msg.classList.remove("hidden");
+    const naBase = await cleanupSedeInNteBase();
+    const nasPessoas = await cleanupSedeInPersonRecords();
+    renderNteStatus();
+    if(nasPessoas > 0){ renderHistoryTable(); renderArchivedTable(); }
+    msg.textContent = naBase+" registro(s) da base e "+nasPessoas+" registro(s) de pessoas atualizados.";
+    msg.style.color = "var(--navy-800)";
+  }
+
   function switchView(view){
     document.getElementById("view-producao").classList.toggle("hidden", view !== "producao");
     document.getElementById("view-arquivado").classList.toggle("hidden", view !== "arquivado");
@@ -1769,6 +1830,7 @@
     poloFileInput.addEventListener("change", (e)=>{ if(e.target.files[0]) handlePoloBaseFile(e.target.files[0]); poloFileInput.value = ""; });
     document.getElementById("btn-manual-polo-add").addEventListener("click", handleManualPoloAdd);
     document.getElementById("btn-manual-polo-delete").addEventListener("click", handleManualPoloDelete);
+    document.getElementById("btn-cleanup-sede").addEventListener("click", handleCleanupSede);
     document.getElementById("manual-polo-nte").addEventListener("input", handleManualPoloLookup);
     ["manual-polo-nte","manual-polo-polo"].forEach(id=>{
       document.getElementById(id).addEventListener("keydown", (e)=>{ if(e.key==="Enter") handleManualPoloAdd(); });
