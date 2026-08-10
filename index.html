@@ -116,15 +116,15 @@
   .content-wrap{max-width:56rem;margin:0 auto;padding:2rem 1.5rem 4rem;}
   @media (min-width:640px){ .content-wrap{padding:2.75rem 2.5rem 4rem;} }
   .module-header{margin-bottom:2rem;}
-  #sticky-top{position:sticky; top:0; z-index:20; background:var(--paper-50); padding-top:0.25rem; margin-bottom:0.75rem;}
+  #sticky-top{margin-bottom:0.75rem;}
 
   .filter-input{
     width:100%; font-size:12px; padding:4px 7px; border-radius:6px;
     border:1px solid var(--paper-border); background:var(--paper-50); color:var(--ink-900);
   }
   .sticky-head tr{position:sticky; z-index:5;}
-  .sticky-head tr:first-child{top:var(--table-sticky-offset, 0px);}
-  .sticky-head tr:last-child{top:calc(var(--table-sticky-offset, 0px) + 32px);}
+  .sticky-head tr:first-child{top:0;}
+  .sticky-head tr:last-child{top:32px;}
   .filter-input:focus{outline:2px solid var(--gold-500); outline-offset:0;}
   .filter-input::placeholder{color:var(--ink-400);}
   .truncate-cell{max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -1005,16 +1005,6 @@
     document.getElementById("history-count-label").textContent = state.history.length + (state.history.length===1?" registro":" registros");
     const archLabel = document.getElementById("archived-count-label");
     if(archLabel) archLabel.textContent = state.archived.length + (state.archived.length===1?" registro":" registros");
-    updateStickyOffset();
-  }
-  // O painel (título+dashboard) e o cabeçalho da tabela de Pessoas congelam juntos. A variável é
-  // aplicada só dentro de #view-producao, então a tabela de Arquivado (sem esse painel acima)
-  // continua colando no topo (0px) normalmente.
-  function updateStickyOffset(){
-    const el = document.getElementById("sticky-top");
-    const scope = document.getElementById("view-producao");
-    if(!el || !scope) return;
-    scope.style.setProperty("--table-sticky-offset", el.offsetHeight + "px");
   }
   function pulse(el){ el.classList.remove("pulse-once"); void el.offsetWidth; el.classList.add("pulse-once"); }
 
@@ -1476,7 +1466,6 @@
     renderNteStatus();
     renderStats();
     wireEvents();
-    window.addEventListener("resize", updateStickyOffset);
     subscribeBucket("atual", onHistoryChanged);
     subscribeBucket("arquivado", onArchivedChanged);
   }
