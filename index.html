@@ -904,6 +904,28 @@
       await persistBucketFallback("atual", []);
     }
   }
+  // Move UM registro específico de "atual" para "arquivado" (ação manual por linha, diferente do
+  // arquivamento automático em lote quando chega uma carga nova). Nunca apaga — só muda de pasta.
+  async function archiveOneRecord(fbKey){
+    if(fbDb){
+      const record = state.history.find(r => r._fbKey === fbKey);
+      if(!record) return;
+      const rest = Object.assign({}, record); delete rest._fbKey;
+      try{
+        await fbDb.ref().update({
+          [FB_ROOT+"/historico/arquivado/"+fbKey]: rest,
+          [FB_ROOT+"/historico/atual/"+fbKey]: null
+        });
+      }catch(e){ console.error("Falha ao arquivar registro:", e); }
+    } else {
+      const atual = await loadBucketOnce("atual");
+      const record = atual.find(r => r._fbKey === fbKey);
+      if(!record) return;
+      const arquivado = await loadBucketOnce("arquivado");
+      await persistBucketFallback("arquivado", arquivado.concat([record]));
+      await persistBucketFallback("atual", atual.filter(r => r._fbKey !== fbKey));
+    }
+  }
 
   // ---------- base de matrículas x NTE (carregada por planilha, usada para enriquecer os registros) ----------
   async function loadNteBase(){
@@ -1331,7 +1353,10 @@
         '<td class="py-2.5 pr-3">'+escapeHtml(it.nome)+(hasObs?'<span class="note-dot" title="Tem observação"></span>':'')+'</td>' +
         '<td class="py-2.5 pr-3 truncate-cell" title="'+escapeHtml(it.cargoDetalhe||"")+'">'+escapeHtml(it.cargoDetalhe||"—")+'</td>' +
         '<td class="py-2.5 pr-3 text-xs">'+escapeHtml(it.dataDO||it.portariaData||"—")+'</td>' +
-        '<td class="py-2.5 pr-2 text-right no-print"><button class="btn-remove text-xs" data-key="'+escapeHtml(key)+'" data-bucket="'+bucket+'" style="color:var(--brick-600);" title="Remover">remover</button></td>' +
+        '<td class="py-2.5 pr-2 text-right no-print">'+(bucket==="atual"
+            ? '<button class="btn-archive text-xs" data-key="'+escapeHtml(key)+'" style="color:var(--gold-600);" title="Mover para Arquivado">arquivar</button>'
+            : '<button class="btn-remove text-xs" data-key="'+escapeHtml(key)+'" data-bucket="'+bucket+'" style="color:var(--brick-600);" title="Remover">remover</button>'
+          )+'</td>' +
       '</tr>' +
       '<tr class="detail-row'+(isOpen?'':' hidden')+' no-print" id="'+prefix+'-detail-'+idx+'">' +
         '<td colspan="9" class="pb-3.5 px-3 pt-1">' +
@@ -1891,6 +1916,15 @@
           state.todayT2[idx] = Object.assign({}, c, { confirmado:true });
           await saveSessionSnapshot();
         }
+        return;
+      }
+      const archiveBtn = e.target.closest(".btn-archive");
+      if(archiveBtn){
+        e.stopPropagation();
+        const key = archiveBtn.getAttribute("data-key");
+        const record = state.history.find(r => r._fbKey === key);
+        const nome = record ? record.nome : "este registro";
+        if(confirm('Mover "'+nome+'" para Arquivado?')) await archiveOneRecord(key);
         return;
       }
       const removeBtn = e.target.closest(".btn-remove");
