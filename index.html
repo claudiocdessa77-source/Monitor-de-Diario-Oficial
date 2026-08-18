@@ -1179,20 +1179,25 @@
     const wb = XLSX.read(buf, {type:"array"});
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, {defval:""});
+    if(!rows.length) throw new Error("A planilha está vazia ou não foi possível ler nenhuma linha.");
+    const allHeaders = Object.keys(rows[0]);
+    const nteKey = allHeaders.find(k => /^nte/i.test(k));
+    const poloKey = allHeaders.find(k => /^polo/i.test(k));
+    if(!nteKey) throw new Error('Nenhuma coluna começando com "NTE" foi encontrada. Colunas lidas: "'+allHeaders.join('", "')+'".');
+    if(!poloKey) throw new Error('Nenhuma coluna começando com "Polo" foi encontrada. Colunas lidas: "'+allHeaders.join('", "')+'".');
     const map = {};
     let count = 0;
+    let semPolo = 0;
     for(const row of rows){
-      const keys = Object.keys(row);
-      const nteKey = keys.find(k => /^nte/i.test(k));
-      const poloKey = keys.find(k => /^polo/i.test(k));
-      if(!nteKey) continue;
       const nte = extractNteNumber(row[nteKey]);
       if(!nte) continue;
-      map[nte] = poloKey ? String(row[poloKey]).trim() : "";
+      const poloVal = String(row[poloKey]).trim();
+      if(!poloVal) semPolo++;
+      map[nte] = poloVal;
       count++;
     }
-    if(!count) throw new Error("Nenhuma linha com NTE reconhecível. Confira se a planilha tem uma coluna \"NTE\".");
-    return { map, count, atualizadoEm: new Date().toISOString() };
+    if(!count) throw new Error('Nenhuma linha com NTE reconhecível. Confira se a coluna "'+nteKey+'" tem valores como "NTE 01".');
+    return { map, count, atualizadoEm: new Date().toISOString(), colNte: nteKey, colPolo: poloKey, semPolo };
   }
 
   // ---------- state ----------
@@ -1733,7 +1738,17 @@
       el.style.color = "var(--ink-400);";
       return;
     }
-    el.textContent = state.poloBase.count + " NTE(s) relacionado(s)" + (state.poloBase.atualizadoEm ? " · atualizado em " + fmtDateTimeBR(state.poloBase.atualizadoEm) : "");
+    let txt = state.poloBase.count + " NTE(s) relacionado(s)" + (state.poloBase.atualizadoEm ? " · atualizado em " + fmtDateTimeBR(state.poloBase.atualizadoEm) : "");
+    if(state.poloBase.colNte && state.poloBase.colPolo){
+      txt += " · colunas lidas: \""+state.poloBase.colNte+"\" e \""+state.poloBase.colPolo+"\"";
+    }
+    if(state.poloBase.semPolo > 0){
+      txt += " · ATENÇÃO: "+state.poloBase.semPolo+" linha(s) sem valor de Polo";
+      el.style.color = "var(--brick-600)";
+      el.textContent = txt;
+      return;
+    }
+    el.textContent = txt;
     el.style.color = "var(--navy-800)";
   }
   async function handlePoloBaseFile(file){
