@@ -210,7 +210,7 @@
       <span id="fb-dot" class="fb-dot"></span>
       <span id="fb-label" class="text-xs" style="color:#9FB3CC;">Verificando…</span>
     </div>
-    <span class="f-mono text-xs" style="color:#5A6E88;">build 2026-08-18.1</span>
+    <span class="f-mono text-xs" style="color:#5A6E88;">build 2026-08-18.4</span>
   </div>
 </aside>
 
@@ -487,6 +487,10 @@
       <p class="text-xs mb-2.5" style="color:var(--ink-400);">Remove a expressão "SEDE:" de todos os valores de NTE já salvos — tanto na base de referência quanto nos registros de pessoas (Produção e Arquivado).</p>
       <button id="btn-cleanup-sede" class="btn-ghost rounded-lg px-4 py-2 text-sm">Remover "SEDE:" de todos os NTE</button>
       <p id="cleanup-sede-msg" class="text-xs mt-2 hidden"></p>
+
+      <p class="text-xs mt-4 mb-2.5" style="color:var(--ink-400);">Recarregar uma base só preenche o que está vazio nos registros já salvos. Se você corrigiu um erro na base (ex.: um NTE que apontava pro Polo errado), use isto para <strong>sobrescrever</strong> NTE/Polo/Município/Unidade de todas as pessoas com o que as bases dizem agora.</p>
+      <button id="btn-resync" class="btn-ghost rounded-lg px-4 py-2 text-sm">Ressincronizar todos os registros com as bases</button>
+      <p id="resync-msg" class="text-xs mt-2 hidden"></p>
     </div>
   </section>
 
@@ -1101,6 +1105,32 @@
     }
     return changed;
   }
+  // Ressincronização: diferente do preenchimento retroativo (que só entra em campos VAZIOS), isso
+  // SOBRESCREVE NTE/Polo/Município/Unidade de TODOS os registros com o que as bases dizem agora —
+  // usado quando uma base foi corrigida e o erro antigo já tinha sido gravado nas pessoas.
+  async function resyncReferenceFields(){
+    let total = 0;
+    for(const bucket of ["atual","arquivado"]){
+      const rows = bucket==="atual" ? state.history : state.archived;
+      for(const r of rows){
+        const ref = lookupReferencia(r.matricula);
+        const patch = {};
+        if(ref){
+          if(ref.nte && ref.nte !== r.nte) patch.nte = ref.nte;
+          if(ref.municipio && ref.municipio !== r.municipio) patch.municipio = ref.municipio;
+          if(ref.unidade && ref.unidade !== r.unidade) patch.unidade = ref.unidade;
+        }
+        const efetivoNte = patch.nte || r.nte;
+        const polo = lookupPolo(efetivoNte);
+        if(polo && polo !== r.polo) patch.polo = polo;
+        if(Object.keys(patch).length){
+          total++;
+          await updateInBucket(bucket, r._fbKey, patch);
+        }
+      }
+    }
+    return total;
+  }
   async function loadPoloBase(){
     const empty = { map:{}, count:0, atualizadoEm:null };
     if(fbDb){
@@ -1616,7 +1646,11 @@
       await saveNteBase(nteBase);
       renderNteStatus();
       const preenchidos = await backfillNteInHistory();
-      if(preenchidos>0){ renderHistoryTable(); renderArchivedTable(); }
+      if(preenchidos>0){
+        renderHistoryTable(); renderArchivedTable();
+        const statusEl = document.getElementById("nte-status");
+        statusEl.textContent += " · "+preenchidos+" registro(s) de pessoas atualizados agora";
+      }
       // Reprocessa a colagem atual, se houver, para já refletir o NTE nos resultados na tela.
       if(document.getElementById("input-text").value.trim()) await onProcessar();
     }catch(err){
@@ -1763,7 +1797,11 @@
       await savePoloBase(poloBase);
       renderPoloStatus();
       const preenchidos = await backfillNteInHistory();
-      if(preenchidos>0){ renderHistoryTable(); renderArchivedTable(); }
+      if(preenchidos>0){
+        renderHistoryTable(); renderArchivedTable();
+        const statusEl = document.getElementById("polo-status");
+        statusEl.textContent += " · "+preenchidos+" registro(s) de pessoas atualizados agora";
+      }
       if(document.getElementById("input-text").value.trim()) await onProcessar();
     }catch(err){
       console.error(err);
@@ -1836,6 +1874,18 @@
     msg.style.color = "var(--navy-800)";
   }
 
+  async function handleResync(){
+    const msg = document.getElementById("resync-msg");
+    if(!confirm("Sobrescrever NTE, Polo, Município e Unidade de TODOS os registros de pessoas (Produção e Arquivado) com o que as bases dizem agora? Isso substitui qualquer valor já preenchido, inclusive correções manuais feitas direto num registro. Não pode ser desfeito.")) return;
+    msg.textContent = "Ressincronizando…";
+    msg.style.color = "var(--ink-400)";
+    msg.classList.remove("hidden");
+    const total = await resyncReferenceFields();
+    if(total > 0){ renderHistoryTable(); renderArchivedTable(); }
+    msg.textContent = total>0 ? total+" registro(s) atualizado(s)." : "Nenhuma diferença encontrada — todos os registros já batiam com as bases.";
+    msg.style.color = "var(--navy-800)";
+  }
+
   function switchView(view){
     document.getElementById("view-producao").classList.toggle("hidden", view !== "producao");
     document.getElementById("view-arquivado").classList.toggle("hidden", view !== "arquivado");
@@ -1901,6 +1951,7 @@
     document.getElementById("btn-manual-polo-add").addEventListener("click", handleManualPoloAdd);
     document.getElementById("btn-manual-polo-delete").addEventListener("click", handleManualPoloDelete);
     document.getElementById("btn-cleanup-sede").addEventListener("click", handleCleanupSede);
+    document.getElementById("btn-resync").addEventListener("click", handleResync);
     document.getElementById("manual-polo-nte").addEventListener("input", handleManualPoloLookup);
     ["manual-polo-nte","manual-polo-polo"].forEach(id=>{
       document.getElementById(id).addEventListener("keydown", (e)=>{ if(e.key==="Enter") handleManualPoloAdd(); });
