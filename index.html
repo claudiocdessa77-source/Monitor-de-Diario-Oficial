@@ -1047,6 +1047,17 @@
 
   // ---------- base de Polo × NTE (relaciona NTE a Polo — chave é o NTE, não a matrícula) ----------
   function normalizeNteKey(s){ return String(s||"").trim().toUpperCase(); }
+  // O cruzamento de Polo usa só o NÚMERO do NTE (ex.: 17), não o texto inteiro — porque o mesmo
+  // NTE aparece formatado de jeitos diferentes conforme a fonte: "NTE 17 - Ribeira do Pombal" na
+  // base de Polo, "NTE 17" ou com a cidade abreviada num registro de pessoa. Casar pelo número
+  // evita que essas variações de formatação quebrem o cruzamento.
+  function extractNteNumber(s){
+    if(!s) return null;
+    const m = String(s).match(/NTE\s*0*(\d+)/i);
+    const numStr = m ? m[1] : (/^\d+$/.test(String(s).trim()) ? String(s).trim() : null);
+    if(numStr === null || numStr === "") return null;
+    return String(parseInt(numStr, 10));
+  }
 
   // Manutenção: remove a expressão "SEDE:" (com variações de espaço/maiúsculas) de um valor de
   // NTE, normalizando espaços e hífens soltos que sobrariam.
@@ -1098,6 +1109,22 @@
       catch(e){}
     }
     return (memoryFallback && memoryFallback.poloBase) || empty;
+  }
+  // Entradas adicionadas manualmente antes desta correção ficaram com a chave no formato antigo
+  // ("NTE 05" em vez de "5"). Reconverte para o novo formato numérico na primeira carga, sem
+  // perder nada — mescla se, por algum motivo, já existir a chave nova.
+  async function migratePoloBaseKeysIfNeeded(poloBase){
+    const keys = Object.keys(poloBase.map);
+    const precisaMigrar = keys.some(k => !/^\d+$/.test(k));
+    if(!precisaMigrar) return poloBase;
+    const novoMap = {};
+    keys.forEach(k => {
+      const num = extractNteNumber(k);
+      if(num) novoMap[num] = poloBase.map[k];
+    });
+    const migrado = { map: novoMap, count: Object.keys(novoMap).length, atualizadoEm: new Date().toISOString() };
+    await savePoloBase(migrado);
+    return migrado;
   }
   async function savePoloBase(poloBase){
     if(fbDb){ try{ await fbDb.ref(FB_ROOT+"/basePolo").set(poloBase); return; }catch(e){ console.error(e); } }
@@ -1156,7 +1183,7 @@
       const nteKey = keys.find(k => /^nte/i.test(k));
       const poloKey = keys.find(k => /^polo/i.test(k));
       if(!nteKey) continue;
-      const nte = normalizeNteKey(row[nteKey]);
+      const nte = extractNteNumber(row[nteKey]);
       if(!nte) continue;
       map[nte] = poloKey ? String(row[poloKey]).trim() : "";
       count++;
@@ -1188,7 +1215,7 @@
   }
   function lookupPolo(nte){
     if(!nte) return null;
-    return state.poloBase.map[normalizeNteKey(nte)] || null;
+    return state.poloBase.map[extractNteNumber(nte)] || null;
   }
   function enrichWithNte(items){
     return items.map(it => {
@@ -1728,7 +1755,7 @@
   }
 
   function handleManualPoloLookup(){
-    const nte = normalizeNteKey(document.getElementById("manual-polo-nte").value);
+    const nte = extractNteNumber(document.getElementById("manual-polo-nte").value);
     const deleteBtn = document.getElementById("btn-manual-polo-delete");
     const poloEl = document.getElementById("manual-polo-polo");
     const existing = nte ? state.poloBase.map[nte] : null;
@@ -1744,7 +1771,7 @@
     const nteEl = document.getElementById("manual-polo-nte");
     const poloEl = document.getElementById("manual-polo-polo");
     const msg = document.getElementById("manual-polo-msg");
-    const nte = normalizeNteKey(nteEl.value);
+    const nte = extractNteNumber(nteEl.value);
     if(!nte){
       msg.textContent = "Informe ao menos o NTE.";
       msg.style.color = "var(--brick-600)";
@@ -1763,7 +1790,7 @@
     setTimeout(()=>msg.classList.add("hidden"), 4000);
   }
   async function handleManualPoloDelete(){
-    const nte = normalizeNteKey(document.getElementById("manual-polo-nte").value);
+    const nte = extractNteNumber(document.getElementById("manual-polo-nte").value);
     if(!nte || !(nte in state.poloBase.map)) return;
     if(!confirm("Excluir a relação do NTE "+nte+" com Polo? Isso não afeta registros de pessoas já salvos.")) return;
     await removePoloEntry(nte);
@@ -1994,7 +2021,7 @@
     document.getElementById("cfg-orgao").value = state.config.orgaoKeywords;
     state.nteBase = await loadNteBase();
     renderNteStatus();
-    state.poloBase = await loadPoloBase();
+    state.poloBase = await migratePoloBaseKeysIfNeeded(await loadPoloBase());
     renderPoloStatus();
     const session = await loadSessionSnapshot();
     state.todayT1 = session.todayT1 || [];
