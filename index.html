@@ -210,7 +210,7 @@
       <span id="fb-dot" class="fb-dot"></span>
       <span id="fb-label" class="text-xs" style="color:#9FB3CC;">Verificando…</span>
     </div>
-    <span class="f-mono text-xs" style="color:#5A6E88;">build 2026-08-18.4</span>
+    <span class="f-mono text-xs" style="color:#5A6E88;">build 2026-08-18.5</span>
   </div>
 </aside>
 
@@ -517,6 +517,24 @@
         <button id="btn-manual-polo-delete" class="rounded-lg px-4 py-2 text-sm hidden" style="border:1px solid var(--brick-600); color:var(--brick-600); background:#fff;">Excluir este NTE</button>
       </div>
       <p id="manual-polo-msg" class="text-xs mt-2 hidden"></p>
+    </div>
+
+    <div class="mt-4 pt-4" style="border-top:1px solid var(--paper-border);">
+      <button id="btn-toggle-polo-list" class="text-xs font-semibold" style="color:var(--navy-900);">Ver todas as relações carregadas ▸</button>
+      <div id="polo-list-wrap" class="hidden mt-2.5">
+        <input id="polo-list-search" type="text" placeholder="Filtrar por NTE ou Polo…" class="filter-input mb-2" style="max-width:280px; padding:6px 9px;">
+        <div class="scroll-x" style="max-height:280px; overflow-y:auto;">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="text-left text-xs" style="color:var(--ink-400); border-bottom:1px solid var(--paper-border);">
+                <th class="py-1.5 pr-3 font-semibold">NTE</th>
+                <th class="py-1.5 pr-3 font-semibold">Polo</th>
+              </tr>
+            </thead>
+            <tbody id="polo-list-tbody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1784,6 +1802,28 @@
     }
     el.textContent = txt;
     el.style.color = "var(--navy-800)";
+    refreshPoloListIfOpen();
+  }
+  function refreshPoloListIfOpen(){
+    const wrap = document.getElementById("polo-list-wrap");
+    if(wrap && !wrap.classList.contains("hidden")) renderPoloList();
+  }
+  function renderPoloList(){
+    const tbody = document.getElementById("polo-list-tbody");
+    const term = document.getElementById("polo-list-search").value.trim().toLowerCase();
+    let entries = Object.keys(state.poloBase.map).map(k => ({ nte:k, polo:state.poloBase.map[k] }));
+    entries.sort((a,b) => parseInt(a.nte,10) - parseInt(b.nte,10));
+    if(term) entries = entries.filter(e => e.nte.toLowerCase().includes(term) || (e.polo||"").toLowerCase().includes(term));
+    if(!entries.length){
+      tbody.innerHTML = '<tr><td colspan="2" class="py-3 text-xs" style="color:var(--ink-400);">Nada encontrado.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = entries.map(e =>
+      '<tr class="polo-list-row" data-nte="'+escapeHtml(e.nte)+'" style="cursor:pointer; border-bottom:1px solid var(--paper-border);">' +
+        '<td class="py-1.5 pr-3 f-mono">NTE '+escapeHtml(e.nte)+'</td>' +
+        '<td class="py-1.5 pr-3">'+escapeHtml(e.polo||"—")+'</td>' +
+      '</tr>'
+    ).join("");
   }
   async function handlePoloBaseFile(file){
     const el = document.getElementById("polo-error");
@@ -1796,6 +1836,7 @@
       state.poloBase = poloBase;
       await savePoloBase(poloBase);
       renderPoloStatus();
+      refreshPoloListIfOpen();
       const preenchidos = await backfillNteInHistory();
       if(preenchidos>0){
         renderHistoryTable(); renderArchivedTable();
@@ -1836,6 +1877,7 @@
     }
     const isNew = await addManualPoloEntry(nte, poloEl.value.trim());
     renderPoloStatus();
+    refreshPoloListIfOpen();
     const preenchidos = await backfillNteInHistory();
     if(preenchidos>0){ renderHistoryTable(); renderArchivedTable(); }
     nteEl.value=""; poloEl.value="";
@@ -1851,6 +1893,7 @@
     if(!confirm("Excluir a relação do NTE "+nte+" com Polo? Isso não afeta registros de pessoas já salvos.")) return;
     await removePoloEntry(nte);
     renderPoloStatus();
+    refreshPoloListIfOpen();
     document.getElementById("manual-polo-nte").value=""; document.getElementById("manual-polo-polo").value="";
     document.getElementById("btn-manual-polo-delete").classList.add("hidden");
     const msg = document.getElementById("manual-polo-msg");
@@ -1952,6 +1995,15 @@
     document.getElementById("btn-manual-polo-delete").addEventListener("click", handleManualPoloDelete);
     document.getElementById("btn-cleanup-sede").addEventListener("click", handleCleanupSede);
     document.getElementById("btn-resync").addEventListener("click", handleResync);
+    document.getElementById("btn-toggle-polo-list").addEventListener("click", ()=>{
+      const wrap = document.getElementById("polo-list-wrap");
+      const btn = document.getElementById("btn-toggle-polo-list");
+      const opening = wrap.classList.contains("hidden");
+      wrap.classList.toggle("hidden");
+      btn.textContent = "Ver todas as relações carregadas " + (opening ? "▾" : "▸");
+      if(opening) renderPoloList();
+    });
+    document.getElementById("polo-list-search").addEventListener("input", renderPoloList);
     document.getElementById("manual-polo-nte").addEventListener("input", handleManualPoloLookup);
     ["manual-polo-nte","manual-polo-polo"].forEach(id=>{
       document.getElementById(id).addEventListener("keydown", (e)=>{ if(e.key==="Enter") handleManualPoloAdd(); });
@@ -1997,6 +2049,15 @@
     }
 
     document.body.addEventListener("click", async (e)=>{
+      const poloListRow = e.target.closest(".polo-list-row");
+      if(poloListRow){
+        const nteEl = document.getElementById("manual-polo-nte");
+        nteEl.value = poloListRow.dataset.nte;
+        handleManualPoloLookup();
+        nteEl.scrollIntoView({behavior:"smooth", block:"center"});
+        nteEl.focus();
+        return;
+      }
       const confirmBtn = e.target.closest(".btn-confirm-review");
       if(confirmBtn){
         const idx = parseInt(confirmBtn.getAttribute("data-review-idx"), 10);
@@ -2092,6 +2153,7 @@
     renderNteStatus();
     state.poloBase = await migratePoloBaseKeysIfNeeded(await loadPoloBase());
     renderPoloStatus();
+    refreshPoloListIfOpen();
     const session = await loadSessionSnapshot();
     state.todayT1 = session.todayT1 || [];
     state.todayT2 = session.todayT2 || [];
