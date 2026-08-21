@@ -210,7 +210,7 @@
       <span id="fb-dot" class="fb-dot"></span>
       <span id="fb-label" class="text-xs" style="color:#9FB3CC;">Verificando…</span>
     </div>
-    <span class="f-mono text-xs" style="color:#5A6E88;">build 2026-08-18.5</span>
+    <span class="f-mono text-xs" style="color:#5A6E88;">build 2026-08-18.6</span>
   </div>
 </aside>
 
@@ -500,6 +500,7 @@
     <p class="text-xs mb-3" style="color:var(--ink-400);">Planilha (.xlsx ou .csv) com as colunas NTE e Polo — relaciona cada NTE ao seu Polo (não usa matrícula). Recarregar substitui a base inteira; relações já salvas são atualizadas, sem perder o resto.</p>
     <div class="flex flex-wrap items-center gap-3">
       <button id="btn-polo-upload" class="btn-ghost rounded-lg px-4 py-2 text-sm">Carregar planilha</button>
+      <button id="btn-polo-export" class="btn-ghost rounded-lg px-4 py-2 text-sm">Exportar planilha (Excel)</button>
       <input id="polo-file-input" type="file" accept=".xlsx,.xls,.csv" class="hidden">
       <span id="polo-status" class="text-xs" style="color:var(--ink-400);">Nenhuma base carregada ainda — o campo Polo fica vazio até você carregar uma planilha.</span>
     </div>
@@ -1825,6 +1826,20 @@
       '</tr>'
     ).join("");
   }
+  function exportPoloBase(){
+    const entries = Object.keys(state.poloBase.map).map(k => ({ nte:k, polo:state.poloBase.map[k] }));
+    if(!entries.length){
+      alert("Nenhuma relação carregada ainda — não há o que exportar.");
+      return;
+    }
+    entries.sort((a,b) => parseInt(a.nte,10) - parseInt(b.nte,10));
+    const data = entries.map(e => ({ "NTE": "NTE " + String(e.nte).padStart(2,"0"), "Polo": e.polo || "" }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws["!cols"] = [{wch:14},{wch:16}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Base Polo");
+    XLSX.writeFile(wb, "base_polo_nte.xlsx");
+  }
   async function handlePoloBaseFile(file){
     const el = document.getElementById("polo-error");
     el.classList.add("hidden");
@@ -1990,6 +2005,7 @@
 
     const poloFileInput = document.getElementById("polo-file-input");
     document.getElementById("btn-polo-upload").addEventListener("click", ()=> poloFileInput.click());
+    document.getElementById("btn-polo-export").addEventListener("click", exportPoloBase);
     poloFileInput.addEventListener("change", (e)=>{ if(e.target.files[0]) handlePoloBaseFile(e.target.files[0]); poloFileInput.value = ""; });
     document.getElementById("btn-manual-polo-add").addEventListener("click", handleManualPoloAdd);
     document.getElementById("btn-manual-polo-delete").addEventListener("click", handleManualPoloDelete);
