@@ -59,6 +59,15 @@
   .stat-num{font-family:'Source Serif 4',Georgia,serif;font-weight:700;}
   .pulse-once{animation:pulseOnce .5s ease;}
   @keyframes pulseOnce{0%{transform:scale(1)}30%{transform:scale(1.08);color:var(--gold-600)}100%{transform:scale(1)}}
+  .copyable-cell{cursor:pointer; position:relative;}
+  .copy-flash{animation:copyFlash .5s ease;}
+  @keyframes copyFlash{0%{background:var(--gold-300)}100%{background:transparent}}
+  .copy-toast{
+    position:absolute; left:50%; top:-6px; transform:translate(-50%,-100%);
+    background:var(--navy-900); color:#fff; font-size:11px; padding:3px 8px; border-radius:5px;
+    white-space:nowrap; pointer-events:none; z-index:40; opacity:0; animation:copyToast 1.1s ease;
+  }
+  @keyframes copyToast{0%{opacity:0; transform:translate(-50%,-90%);} 15%{opacity:1; transform:translate(-50%,-100%);} 80%{opacity:1;} 100%{opacity:0; transform:translate(-50%,-110%);}}
   .selo-sec{display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--navy-800);border-radius:999px;padding:1px 10px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;letter-spacing:.06em;color:var(--navy-800);background:var(--gold-300);box-shadow:inset 0 0 0 1px var(--gold-500);transform:rotate(-2.5deg);white-space:nowrap;}
   .orgao-pill{display:inline-flex;align-items:center;border-radius:999px;padding:1px 9px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--ink-400);background:var(--paper-100);border:1px solid var(--paper-border);}
   .ledger-row-sec{background:linear-gradient(90deg, var(--gold-100) 0%, rgba(255,255,255,0) 14%);}
@@ -210,7 +219,7 @@
       <span id="fb-dot" class="fb-dot"></span>
       <span id="fb-label" class="text-xs" style="color:#9FB3CC;">Verificando…</span>
     </div>
-    <span class="f-mono text-xs" style="color:#5A6E88;">build 2026-08-18.6</span>
+    <span class="f-mono text-xs" style="color:#5A6E88;">build 2026-08-27.1</span>
   </div>
 </aside>
 
@@ -1429,14 +1438,14 @@
     const hasObs = it.observacoes && it.observacoes.trim();
     return (
       '<tr class="ledger-row ledger-row-sec fade-in" data-detail-target="'+prefix+'-detail-'+idx+'" data-key="'+escapeHtml(key)+'" data-bucket="'+bucket+'">' +
-        '<td class="py-2.5 pr-3">'+escapeHtml(it.polo||"—")+'</td>' +
-        '<td class="py-2.5 pr-3">'+escapeHtml(it.nte||"—")+'</td>' +
-        '<td class="py-2.5 pr-3 truncate-cell" title="'+escapeHtml(it.municipio||"")+'">'+escapeHtml(it.municipio||"—")+'</td>' +
-        '<td class="py-2.5 pr-3 truncate-cell" title="'+escapeHtml(it.unidade||"")+'">'+escapeHtml(it.unidade||"—")+'</td>' +
-        '<td class="py-2.5 pr-3 f-mono">'+escapeHtml(it.matricula||"—")+'</td>' +
-        '<td class="py-2.5 pr-3">'+escapeHtml(it.nome)+(hasObs?'<span class="note-dot" title="Tem observação"></span>':'')+'</td>' +
-        '<td class="py-2.5 pr-3 truncate-cell" title="'+escapeHtml(it.cargoDetalhe||"")+'">'+escapeHtml(it.cargoDetalhe||"—")+'</td>' +
-        '<td class="py-2.5 pr-3 text-xs">'+escapeHtml(it.dataDO||it.portariaData||"—")+'</td>' +
+        '<td class="py-2.5 pr-3 copyable-cell">'+escapeHtml(it.polo||"—")+'</td>' +
+        '<td class="py-2.5 pr-3 copyable-cell">'+escapeHtml(it.nte||"—")+'</td>' +
+        '<td class="py-2.5 pr-3 truncate-cell copyable-cell" title="'+escapeHtml(it.municipio||"")+'">'+escapeHtml(it.municipio||"—")+'</td>' +
+        '<td class="py-2.5 pr-3 truncate-cell copyable-cell" title="'+escapeHtml(it.unidade||"")+'">'+escapeHtml(it.unidade||"—")+'</td>' +
+        '<td class="py-2.5 pr-3 f-mono copyable-cell">'+escapeHtml(it.matricula||"—")+'</td>' +
+        '<td class="py-2.5 pr-3 copyable-cell">'+escapeHtml(it.nome)+(hasObs?'<span class="note-dot" title="Tem observação"></span>':'')+'</td>' +
+        '<td class="py-2.5 pr-3 truncate-cell copyable-cell" title="'+escapeHtml(it.cargoDetalhe||"")+'">'+escapeHtml(it.cargoDetalhe||"—")+'</td>' +
+        '<td class="py-2.5 pr-3 text-xs copyable-cell">'+escapeHtml(it.dataDO||it.portariaData||"—")+'</td>' +
         '<td class="py-2.5 pr-2 text-right no-print">'+(bucket==="atual"
             ? '<button class="btn-archive text-xs" data-key="'+escapeHtml(key)+'" style="color:var(--gold-600);" title="Mover para Arquivado">arquivar</button>'
             : '<button class="btn-remove text-xs" data-key="'+escapeHtml(key)+'" data-bucket="'+bucket+'" style="color:var(--brick-600);" title="Remover">remover</button>'
@@ -2131,6 +2140,28 @@
         msg.classList.remove("hidden");
         setTimeout(()=> msg.classList.add("hidden"), 2000);
         return;
+      }
+      const copyCell = e.target.closest(".copyable-cell");
+      if(copyCell){
+        const texto = copyCell.textContent.trim();
+        if(texto && texto !== "—"){
+          try{
+            await navigator.clipboard.writeText(texto);
+          }catch(err){
+            try{
+              const ta = document.createElement("textarea");
+              ta.value = texto; ta.style.position = "fixed"; ta.style.opacity = "0";
+              document.body.appendChild(ta); ta.select();
+              document.execCommand("copy");
+              document.body.removeChild(ta);
+            }catch(err2){ console.error("Não foi possível copiar:", err2); }
+          }
+          copyCell.classList.remove("copy-flash"); void copyCell.offsetWidth; copyCell.classList.add("copy-flash");
+          const toast = document.createElement("span");
+          toast.className = "copy-toast"; toast.textContent = "Copiado ✓";
+          copyCell.appendChild(toast);
+          setTimeout(()=> toast.remove(), 1100);
+        }
       }
       const row = e.target.closest(".ledger-row");
       if(row && row.dataset.detailTarget){
