@@ -219,7 +219,7 @@
       <span id="fb-dot" class="fb-dot"></span>
       <span id="fb-label" class="text-xs" style="color:#9FB3CC;">Verificando…</span>
     </div>
-    <span class="f-mono text-xs" style="color:#5A6E88;">build 2026-08-27.2</span>
+    <span class="f-mono text-xs" style="color:#5A6E88;">build 2026-08-27.3</span>
   </div>
 </aside>
 
@@ -1298,33 +1298,11 @@
   // Preenche Polo/NTE/Município/Unidade de registros (atual + arquivado) que ficaram sem, porque
   // a base foi carregada ou atualizada depois. Só toca nos campos vazios — nunca sobrescreve um
   // valor já preenchido. Polo depende do NTE, então usa o NTE recém-preenchido nesta mesma passada.
+  // Antes só preenchia campos vazios; agora sincroniza de verdade (sobrescreve se a base mudou),
+  // porque depender de lembrar de clicar em "Ressincronizar" toda vez que corrige a base já causou
+  // confusão demais. O botão de Ressincronizar continua existindo, só que agora chama a mesma coisa.
   async function backfillNteInHistory(){
-    let total = 0;
-    for(const bucket of ["atual","arquivado"]){
-      const rows = bucket==="atual" ? state.history : state.archived;
-      const pendentes = rows.filter(r => {
-        const needsRef = (!r.nte || !r.municipio || !r.unidade) && lookupReferencia(r.matricula);
-        const needsPolo = !r.polo && r.nte && lookupPolo(r.nte);
-        return needsRef || needsPolo;
-      });
-      if(!pendentes.length) continue;
-      total += pendentes.length;
-      for(const r of pendentes){
-        const ref = lookupReferencia(r.matricula);
-        const patch = {};
-        if(ref){
-          if(!r.nte && ref.nte) patch.nte = ref.nte;
-          if(!r.municipio && ref.municipio) patch.municipio = ref.municipio;
-          if(!r.unidade && ref.unidade) patch.unidade = ref.unidade;
-        }
-        if(!r.polo){
-          const polo = lookupPolo(patch.nte || r.nte);
-          if(polo) patch.polo = polo;
-        }
-        if(Object.keys(patch).length) await updateInBucket(bucket, r._fbKey, patch);
-      }
-    }
-    return total;
+    return await resyncReferenceFields();
   }
 
   function onHistoryChanged(newHistory){
