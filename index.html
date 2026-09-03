@@ -219,7 +219,7 @@
       <span id="fb-dot" class="fb-dot"></span>
       <span id="fb-label" class="text-xs" style="color:#9FB3CC;">Verificando…</span>
     </div>
-    <span class="f-mono text-xs" style="color:#5A6E88;">build 2026-08-27.3</span>
+    <span class="f-mono text-xs" style="color:#5A6E88;">build 2026-08-27.4</span>
   </div>
 </aside>
 
@@ -1515,15 +1515,10 @@
     if(!rows.length) return;
     const data = rows.map(r => ({
       "Nome": r.nome || "", "Matrícula": r.matricula || "", "Processo": r.processo || "",
-      "Órgão": r.orgao || "", "Polo": r.polo || "", "NTE": r.nte || "", "Município": r.municipio || "", "Unidade": r.unidade || "", "Cargo/Detalhe": r.cargoDetalhe || "",
-      "Tipo de Aposentadoria": r.tipoAto || "", "Fundamento Legal": r.fundamento || "",
-      "Tipo de Proventos": r.tipoProventos || "", "Valor (R$)": r.valor || "",
-      "Valor por Extenso": r.valorExtenso || "", "Nº Portaria": r.portariaNumero || "",
-      "Data da Portaria": r.portariaData || "", "Data do D.O.": r.dataDO || "", "Confiança": r.confidence || "",
-      "Observações": r.observacoes || "", "Registrado em": r.dataRegistro ? fmtDateTimeBR(r.dataRegistro) : ""
+      "Órgão": r.orgao || "", "Polo": r.polo || "", "NTE": r.nte || "", "Município": r.municipio || "", "Unidade": r.unidade || "", "Cargo/Detalhe": r.cargoDetalhe || ""
     }));
     const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [{wch:28},{wch:12},{wch:26},{wch:8},{wch:14},{wch:10},{wch:20},{wch:24},{wch:30},{wch:26},{wch:38},{wch:14},{wch:13},{wch:36},{wch:12},{wch:20},{wch:16},{wch:10},{wch:34},{wch:16}];
+    ws["!cols"] = [{wch:28},{wch:12},{wch:26},{wch:8},{wch:14},{wch:10},{wch:20},{wch:24},{wch:30}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, sheetName || "Aposentadorias");
     XLSX.writeFile(wb, filename);
